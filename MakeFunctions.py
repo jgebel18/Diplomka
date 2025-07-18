@@ -2,7 +2,8 @@ import matplotlib.pyplot as plt
 import scipy.integrate as integrate
 import numpy as np
 from numpy.lib.scimath import sqrt as csqrt
-
+from scipy.stats import trapezoid
+from scipy.interpolate import interp1d
 
 class MakeFunctions:
     # Constructor with physical parameters
@@ -13,6 +14,12 @@ class MakeFunctions:
         self.omega_vlaues= omega_values
         self.U = U      # Electron interaction
 
+
+    def Gamma_0(self):
+        parameter = (2 * np.pi * self.t_value) / self.U
+        gamma_0 = -(2 * self.t_value) ** 2 * np.exp(parameter)
+        # print(gamma_0)
+        return gamma_0
 
 
     # Imaginary part in integrand of Y
@@ -52,14 +59,35 @@ class MakeFunctions:
     #Here is a sumation of alll rations
     def SumOfComplexRations(self, x, Sigma):
         sum= ((1/16)*(self.FirstDRatio(x,Sigma)+self.SecondDRation(x,Sigma)+self.ThirdDRation(x,Sigma)))
-        self.PlotIntegrands('Integrands of D', self.x_values, self.FirstDRatio(self.x_values,Sigma),'1st-Ratio' ,
-                            self.SecondDRation(self.x_values,Sigma),'2nd-Ratio', self.ThirdDRation(self.x_values,Sigma), '3rd-Ratio')
+        #self.PlotIntegrands('Integrands of D', self.x_values, self.FirstDRatio(self.x_values,Sigma),'1st-Ratio' ,
+                            #self.SecondDRation(self.x_values,Sigma),'2nd-Ratio', self.ThirdDRation(self.x_values,Sigma), '3rd-Ratio')
         return sum
 
+    def TestingIntegrandLeftSide(self,x,Sigma):
+        FirstPart= np.tanh((self.beta*x)/2)
+        SecondPart= (2/(x-(1+1j)*Sigma)**3)
+        return FirstPart*SecondPart.imag
+
+    def TestingIntegrandRightSide(self,x,Sigma):
+        FirstPart= (((self.beta)/2)**2*(-2)*np.tanh((self.beta*x)/2)*(1/(np.cosh((self.beta*x)/2)**2)))
+        SecondPart= (1/(x-(1+1j)*Sigma))
+        return FirstPart*SecondPart.imag
+
+    #def InterpolateValuesofSigma(self, Sigma_values ):
     #Calculate Integral in D
     def D(self, Sigma):
         integrand=lambda x:(1/np.pi)*self.FermiFunction(x)*self.SumOfComplexRations(x,Sigma)
-        result,error=integrate.quad(integrand,-np.inf, np.inf)
+        integrand_2= lambda x: self.TestingIntegrandLeftSide(x,Sigma)
+        self.PlotData('Left Side Integrand', self.x_values, self.TestingIntegrandLeftSide(self.x_values,Sigma), 'x', 'Integrand' , 'Integrand Left Side')
+        integrand_3= lambda x: self.TestingIntegrandRightSide(x,Sigma)
+        self.PlotData('Right Side Integrand', self.x_values, self.TestingIntegrandRightSide(self.x_values, Sigma), 'x',
+                      'Integrand', 'Integrand Right Side')
+        result, error= integrate.quad_vec(integrand,-np.inf, np.inf)
+        result_2,error_2=(integrate.quad_vec(integrand_2,-np.inf, np.inf))
+        result_3, error_3= integrate.quad_vec(integrand_3,-np.inf, np.inf)
+        print(result_2, error_2)
+        print(result_3, error_3)
+        print((-2*self.t_value**3)/(3*np.pi*self.Gamma_0()**2))
         return result
 
     #Calculate Integral in Y(0,0)
@@ -75,7 +103,7 @@ class MakeFunctions:
         reader= -1j
         denominator=csqrt(4 * self.t_value**2 - (-(omega) + Sigma)**2)
         frac=reader/denominator
-        return frac.real#, frac.imag
+        return frac#, frac.imag
 
 
 
@@ -83,7 +111,6 @@ class MakeFunctions:
     # D function
     def PlotIntegrands(self, nazev, DataX, DataY, nazev1, DataY2, nazev2, DataY3, nazev3):
         fig, axes = plt.subplots(3, 1, figsize=(10, 12), sharex=True)
-
         # První subplot
         axes[0].plot(DataX, DataY, label=nazev1)
         axes[0].set_title(nazev1)
