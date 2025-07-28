@@ -1,9 +1,13 @@
 import matplotlib.pyplot as plt
 import scipy.integrate as integrate
 import numpy as np
+from numpy import number
 from numpy.lib.scimath import sqrt as csqrt
 from scipy.stats import trapezoid
 from scipy.interpolate import interp1d
+from scipy.integrate import tanhsinh
+from PlotingFunctions import PlottigFunctions
+
 
 class MakeFunctions:
     # Constructor with physical parameters
@@ -11,8 +15,10 @@ class MakeFunctions:
         self.beta = beta            # Inverse temperature
         self.x_values = x_values    # Array of x values
         self.t_value = t_value     # Hopping parameter
-        self.omega_vlaues= omega_values
+        self.omega_vlaues= omega_values #omega values
         self.U = U      # Electron interaction
+        self.PF= PlottigFunctions()
+
 
 
     def Gamma_0(self):
@@ -59,36 +65,87 @@ class MakeFunctions:
     #Here is a sumation of alll rations
     def SumOfComplexRations(self, x, Sigma):
         sum= ((1/16)*(self.FirstDRatio(x,Sigma)+self.SecondDRation(x,Sigma)+self.ThirdDRation(x,Sigma)))
-        #self.PlotIntegrands('Integrands of D', self.x_values, self.FirstDRatio(self.x_values,Sigma),'1st-Ratio' ,
+        #self.PF.PlotIntegrands('Integrands of D', self.x_values, self.FirstDRatio(self.x_values,Sigma),'1st-Ratio' ,
                             #self.SecondDRation(self.x_values,Sigma),'2nd-Ratio', self.ThirdDRation(self.x_values,Sigma), '3rd-Ratio')
         return sum
 
-    def TestingIntegrandLeftSide(self,x,Sigma):
-        FirstPart= np.tanh((self.beta*x)/2)
-        SecondPart= (2/(x-(1+1j)*Sigma)**3)
-        return FirstPart*SecondPart.imag
+    def TestingIntegrandLeftSide(self, x, Sigma, beta):
+        FirstPart = np.tanh((beta * x) / 2)
+        SecondPart = (2 / (x - (1 + 1j) * Sigma) ** 3)
+        # self.PF.PlotData('Left Side Integrand First Part', self.x_values,FirstPart, 'x',
+        #            'Integrand', 'Integrand Left Side')
+        # self.PF.PlotData('Left Side Integrand Second Part', self.x_values, SecondPart.imag, 'x',
+        #             'Integrand', 'Integrand Left Side')
+       # self.PF.PlotTwoSubplots('First Part', 'Second Part', self.x_values, FirstPart, SecondPart.imag, 'x', 'Integrands',
+                             #'Both parts left side')
+        return FirstPart * SecondPart.imag
 
-    def TestingIntegrandRightSide(self,x,Sigma):
-        FirstPart= (((self.beta)/2)**2*(-2)*np.tanh((self.beta*x)/2)*(1/(np.cosh((self.beta*x)/2)**2)))
-        SecondPart= (1/(x-(1+1j)*Sigma))
-        return FirstPart*SecondPart.imag
+    def TestingIntegrandRightSide(self, x, Sigma ,beta):
+        FirstPart = (((beta) / 2) ** 2 * (-2) * np.tanh((beta * x) / 2) * (
+                    1 - np.tanh((beta * x) / 2) ** 2))
+        SecondPart = (1 / (x - (1 + 1j) * Sigma))
+        #self.PlotData('Right Side Integrand First Part', self.x_values, FirstPart, 'x',
+                     #'Integrand', 'Integrand Right Side')
+        #self.PlotData('Right Side Integrand Second Part', self.x_values, SecondPart.imag , 'x',
+                    #'Integrand', 'Integrand Right Side')
+        #self.PF.PlotTwoSubplots('First Part', 'Second Part', self.x_values, FirstPart, SecondPart.imag,
+         #                    'x', 'Integrands', 'Both parts left side')
+        return FirstPart * SecondPart.imag
 
-    #def InterpolateValuesofSigma(self, Sigma_values ):
-    #Calculate Integral in D
+    # def InterpolateValuesofSigma(self, Sigma_values ):
+    # Calculate Integral in D
     def D(self, Sigma):
-        integrand=lambda x:(1/np.pi)*self.FermiFunction(x)*self.SumOfComplexRations(x,Sigma)
-        integrand_2= lambda x: self.TestingIntegrandLeftSide(x,Sigma)
-        self.PlotData('Left Side Integrand', self.x_values, self.TestingIntegrandLeftSide(self.x_values,Sigma), 'x', 'Integrand' , 'Integrand Left Side')
-        integrand_3= lambda x: self.TestingIntegrandRightSide(x,Sigma)
-        self.PlotData('Right Side Integrand', self.x_values, self.TestingIntegrandRightSide(self.x_values, Sigma), 'x',
-                      'Integrand', 'Integrand Right Side')
-        result, error= integrate.quad_vec(integrand,-np.inf, np.inf)
-        result_2,error_2=(integrate.quad_vec(integrand_2,-np.inf, np.inf))
-        result_3, error_3= integrate.quad_vec(integrand_3,-np.inf, np.inf)
-        print(result_2, error_2)
-        print(result_3, error_3)
-        print((-2*self.t_value**3)/(3*np.pi*self.Gamma_0()**2))
+        integrand = lambda x: (1 / np.pi) * self.FermiFunction(x) * self.SumOfComplexRations(x, Sigma)
+        #values of results of integrals
+        data_results_lhs=np.zeros((len(self.beta)))
+        data_results_rhs=np.zeros((len(self.beta)))
+        #values of Integrands for next plotting
+        integrand_lhs_values = np.zeros((self.beta.size, self.x_values.size))
+        integrand_rhs_values = np.zeros((self.beta.size, self.x_values.size))
+
+        #Generation of arrays of  results and arrays of values of integrands for
+        # different values of beta
+        for i in range(self.beta.size):
+            integrand_lhs= lambda x: self.TestingIntegrandLeftSide(x, Sigma, self.beta[i])
+            integrand_rhs= lambda x: self.TestingIntegrandRightSide(x, Sigma, self.beta[i])
+            result_lhs, error_lhs = integrate.quad_vec(integrand_lhs, -np.inf, np.inf)
+            result_rhs, error_rhs = integrate.quad_vec(integrand_rhs, -np.inf, np.inf)
+            integrand_lhs_values[i,:]=self.TestingIntegrandLeftSide(self.x_values, Sigma, self.beta[i])
+            integrand_rhs_values[i,:]=self.TestingIntegrandRightSide(self.x_values, Sigma, self.beta[i])
+            data_results_lhs[i]= result_lhs
+            data_results_rhs[i]= result_rhs
+        #Plotting of Integrals
+        #self.PF.PlotIntegrandsfordifferentbetavalues(self.beta,self.x_values, integrand_lhs_values, integrand_rhs_values)
+        result, error = integrate.quad_vec(integrand, -np.inf, np.inf)
+        print((self.Gamma_0()/(2*self.t_value))**(-2))
+        #Writing into txt file
+        self.WritetoTxtFile(Sigma)
+        #Ploting results of integrals
+        self.PF.PlotREsultsofIntegrals(self.beta, data_results_lhs, data_results_rhs)
+        print((-2 * self.t_value ** 3) / (3 * np.pi * self.Gamma_0() ** 2))
         return result
+
+    def WritetoTxtFile(self, Sigma):
+        lhs_all = []  # left side
+        rhs_all = []  # right side
+        for beta_i in self.beta:
+            lhs = self.TestingIntegrandLeftSide(self.x_values, Sigma, beta_i)
+            rhs = self.TestingIntegrandRightSide(self.x_values, Sigma, beta_i)
+            lhs_all.append(lhs)
+            rhs_all.append(rhs)
+
+        # Převedeme na NumPy pole (každý řádek odpovídá jedné hodnotě beta)
+        lhs_array = np.array(lhs_all).T  # shape (n_x, n_beta)
+        rhs_array = np.array(rhs_all).T
+        result = np.column_stack([self.x_values, lhs_array, rhs_array])
+
+        # Sloupce pojmenujeme: x, LHS_beta0, LHS_beta1, ..., RHS_beta0, ...
+        header_labels = ['x']
+        header_labels += [f'LHS_beta={b:.3f}' for b in self.beta]
+        header_labels += [f'RHS_beta={b:.3f}' for b in self.beta]
+        header = ' '.join(header_labels)
+        # Saving
+        np.savetxt('AllIntegrands.txt', result, header=header, comments='', delimiter=' ')
 
     #Calculate Integral in Y(0,0)
     def Y(self,Sigma):
@@ -105,42 +162,3 @@ class MakeFunctions:
         frac=reader/denominator
         return frac#, frac.imag
 
-
-
-    #I added here function to plot all integrnds in one picture and every part which is important to define
-    # D function
-    def PlotIntegrands(self, nazev, DataX, DataY, nazev1, DataY2, nazev2, DataY3, nazev3):
-        fig, axes = plt.subplots(3, 1, figsize=(10, 12), sharex=True)
-        # První subplot
-        axes[0].plot(DataX, DataY, label=nazev1)
-        axes[0].set_title(nazev1)
-        axes[0].set_ylabel('Integrand')
-        axes[0].legend()
-
-        # Druhý subplot
-        axes[1].plot(DataX, DataY2, label=nazev2, color='orange')
-        axes[1].set_title(nazev2)
-        axes[1].set_ylabel('Integrand')
-        axes[1].legend()
-
-        # Třetí subplot
-        axes[2].plot(DataX, DataY3, label=nazev3, color='green')
-        axes[2].set_title(nazev3)
-        axes[2].set_xlabel('x')
-        axes[2].set_ylabel('Integrand')
-        axes[2].legend()
-
-        fig.suptitle(nazev)
-        plt.tight_layout(rect=[0, 0, 1, 0.96])  # aby nebyl překryt hlavní titulek
-        plt.savefig(nazev + '_subplots.png')
-        plt.show()
-
-    # Here is another plotting function which is ploting one plot in one picture
-    def PlotData(self, Nazev, dataX, dataY, Nazev_X, Nazev_Y, Title):
-        plt.figure(figsize=(10, 10))
-        plt.plot(dataX, dataY, label=Nazev)
-        plt.xlabel(Nazev_X)
-        plt.ylabel(Nazev_Y)
-        plt.title(Title)
-        plt.savefig(Title + 'pgn')
-        plt.show()

@@ -16,17 +16,17 @@ def Gamma_0(U,t):
 
 
 # Simulation parameters
-
 t = 1.0
 U = -0.5
-beta = 900000
-ScaleFactor=1
+beta = np.array([90,900,9000,90000,900000, 9*1e6])
+ScaleFactor=1.5
 while True:
     try:
         Rezolution= int(input("Suggest the"
                               " Rezolution:")) # Rezolution Sunils suggest Exeption for the future
         if Rezolution>=0:
-            x_values = np.linspace(-(Gamma_0(U,t)/(2*t))*ScaleFactor, (Gamma_0(U,t)/(2*t))*ScaleFactor, Rezolution)
+            x_values= np.linspace(-(Gamma_0(U,t)/(2*t))*ScaleFactor, (Gamma_0(U,t)/(2*t))*ScaleFactor, Rezolution)
+            #x_values = np.linspace(-0.5,0.5, Rezolution)
             omega_values= np.linspace(-5, 5, Rezolution)
             NumIteration= 100
             Tolerance= 0.02
