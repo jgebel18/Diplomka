@@ -21,15 +21,17 @@ class PlottigFunctions:
         plt.savefig('Integrands_for_beta_values.png')
         plt.show()
 
-    def PlotREsultsofIntegrals(self,beta,  Results_lhs, Results_rhs):
+    def PlotResultsofIntegrals(self, X,Y):
         plt.figure(figsize=(10,5))
-        plt.plot(beta, Results_lhs , label="LHS Results")
-        plt.plot(beta, Results_rhs , label="RHS Results")
-        plt.xlabel('beta')
+        plt.plot(X, Y , label="LHS Results for epsilon")
+        #plt.plot(X, Y_2, label="Ideal beta =inf")
+        plt.xlabel('epsilon')
         plt.ylabel('Results')
         plt.legend()
         plt.savefig('Results_for_beta_values.png')
+        plt.savefig('Results_for_beta_values.pdf')
         plt.show()
+
 
 
     #I added here function to plot all integrnds in one picture and every part which is important to define
@@ -88,7 +90,6 @@ class PlottigFunctions:
         plt.ylabel(Nazev_Y)
         plt.title(Nazev2)
         plt.grid(True)
-
         plt.suptitle(Title)
         plt.tight_layout(rect=[0, 0.03, 1, 0.95])  # místo pro hlavní titulek
         plt.savefig(Title + '.png')  # oprava přípony
@@ -99,7 +100,9 @@ class PlottigFunctions:
     def PlotGreenFunction(self, omega, Function, Sigma, NumberIterationToPlot):
         fig, ax = plt.subplots()
         for i in range(NumberIterationToPlot):
-            ax.plot(omega, Function(omega, Sigma[i]), label=f"{i}-tá iterace funkce G(ω)")
+            data= Function(omega, Sigma[i])
+            ax.plot(omega, data.real, label=f"{i}-iterace funkce G(ω) reálná část")
+            ax.plot(omega,data.imag, label=f"{i}-iterace funkce G(ω) imaginární část" )
         ax.set_xlabel("ω")
         ax.set_ylabel("G(ω)")
         ax.legend()

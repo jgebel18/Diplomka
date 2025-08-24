@@ -18,8 +18,10 @@ def Gamma_0(U,t):
 # Simulation parameters
 t = 1.0
 U = -0.5
-beta = np.array([90,900,9000,90000,900000, 9*1e6])
+
+beta = 1e50
 ScaleFactor=1.5
+
 while True:
     try:
         Rezolution= int(input("Suggest the"
@@ -29,7 +31,7 @@ while True:
             #x_values = np.linspace(-0.5,0.5, Rezolution)
             omega_values= np.linspace(-5, 5, Rezolution)
             NumIteration= 100
-            Tolerance= 0.02
+            Tolerance= 1e-5
             # Class initialization
             MkF = MakeFunctions(beta, x_values, t,omega_values ,U)
             IP= MakeIterationFuntions(beta,x_values, t,omega_values, U, NumIteration, Tolerance, Rezolution)
