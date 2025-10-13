@@ -15,11 +15,7 @@ class MakeFunctions:
         self.PF= PlottigFunctions()
 
 
-    def Gamma_0(self):
-        parameter = (2 * np.pi * self.t_value) / self.U
-        gamma_0 = -(2 * self.t_value) ** 2 * np.exp(parameter)
-        # print(gamma_0)
-        return gamma_0
+
 
     # Imaginary part in integrand of Y
     def ComplexFrac_in_Y(self, x, Sigma):
@@ -44,7 +40,7 @@ class MakeFunctions:
         #Sigma=self.FirstIterationofSelfEnergy()
         denom=(csqrt(4 * self.t_value**2 - (-(x) + Sigma)**2))**3
         frac=(x-Sigma)/denom
-        return frac.real
+        return -2*frac.real
 
     #Here is a Third Part
     def ThirdDRation(self,x,Sigma):
@@ -80,13 +76,13 @@ class MakeFunctions:
         integrand = lambda x: (1 / np.pi) * self.FermiFunction(x) * self.SumOfComplexRations(x, Sigma(x))
         result, error = integrate.quad_vec(integrand, -np.inf,np.inf)
         print(result)
-        print(-4*(self.Gamma_0()/2))
+        #print(-4*(self.Gamma_0()/2))
         return result
 
     #Calculate Integral in Y(0,0)
     def Y(self,Sigma):
         integrand = lambda x: (1 / np.pi) * self.FermiFunction(x) * self.ComplexFrac_in_Y(x,Sigma(x))
-        result,error = integrate.quad_vec(integrand, -np.inf,  np.inf)
+        result,error = integrate.quad(integrand, -np.inf,  np.inf)
         return result
 
 

@@ -13,23 +13,22 @@ class PlottigFunctions:
             beta_val = beta[i]
             ax.plot(x_values, integrand_2[i], label=f"Integrand_lhs (β={beta_val})")
             ax.plot(x_values, integrand_3[i], label=f"Integrand_rhs (β={beta_val})")
-        ax.set_title("Integrands for Different β Values")
-        ax.set_xlabel('x')
+        ax.set_title("Integrands for Different eslion Values")
+        ax.set_xlabel('ε')
         ax.set_ylabel('Integrand Value')
         ax.legend()
         plt.tight_layout()
         plt.savefig('Integrands_for_beta_values.png')
         plt.show()
 
-    def PlotResultsofIntegrals(self, X,Y):
+    def PlotResultsofIntegrals(self, X,Y,Y_2):
         plt.figure(figsize=(10,5))
-        plt.plot(X, Y , label="LHS Results for epsilon")
-        #plt.plot(X, Y_2, label="Ideal beta =inf")
-        plt.xlabel('epsilon')
-        plt.ylabel('Results')
+        plt.plot(X, Y , label="D Integral Results for     different epsilon values")
+        plt.plot(X, Y_2, label="Ideal beta =inf")
+        plt.xlabel('ε')
+        plt.ylabel('Integral results')
         plt.legend()
-        plt.savefig('Results_for_beta_values.png')
-        plt.savefig('Results_for_beta_values.pdf')
+        plt.savefig('Results_for_epsilon_values.png')
         plt.show()
 
 
@@ -56,20 +55,18 @@ class PlottigFunctions:
         axes[2].set_xlabel('x')
         axes[2].set_ylabel('Integrand')
         axes[2].legend()
-
         fig.suptitle(nazev)
         plt.tight_layout(rect=[0, 0, 1, 0.96])  # aby nebyl překryt hlavní titulek
         plt.savefig(nazev + '_subplots.png')
         plt.show()
 
     # Here is another plotting function which is ploting one plot in one picture
-    def PlotData(self, Nazev, dataX, dataY, Nazev_X, Nazev_Y, Title):
+    def PlotData(self, dataX, dataY):
         plt.figure(figsize=(10, 10))
-        plt.plot(dataX, dataY, label=Nazev)
-        plt.xlabel(Nazev_X)
-        plt.ylabel(Nazev_Y)
-        plt.title(Title)
-        plt.savefig(Title + 'pgn')
+        plt.plot(dataX, dataY )
+        plt.xlabel('X')
+        plt.ylabel('Integrand')
+        plt.savefig('Integrands.png')
         plt.show()
 
     def PlotTwoSubplots(self, Nazev1, Nazev2, dataX, dataY1, dataY2, Nazev_X, Nazev_Y, Title):
@@ -107,3 +104,15 @@ class PlottigFunctions:
         ax.set_ylabel("G(ω)")
         ax.legend()
         plt.show()
+
+ #This fuction allows us plotiing every iteation of Sigma in one plot ane ever part of this sigma is separated
+    def PlotSigmaFunction(self, omega, SigmaIteration):
+        fig, ax = plt.subplots()
+        for i in range(len(SigmaIteration)):
+            ax.plot(omega, SigmaIteration[i](omega).real,label=f"{i}-iterace Σ(ω) reálná část")
+            ax.plot(omega, SigmaIteration[i](omega).imag,label=f"{i}-iterace Σ(ω) imaginární část")
+        ax.set_xlabel("ω")
+        ax.set_ylabel("Σ(ω)")
+        ax.legend()
+        plt.show()
+

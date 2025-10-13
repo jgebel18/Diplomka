@@ -1,11 +1,12 @@
-import numpy as np 
-import matplotlib.pyplot as plt
-from MakeFunctions import MakeFunctions
+import numpy as np
 import matplotlib
 from CreateIterationProcess import MakeIterationFuntions
 matplotlib.use('TkAgg')
 
 
+def ZerothIterationofSelfEnergy(U,t):
+        Sigma= 1j *3* Gamma_0(U,t) / (2 *t)
+        return Sigma
 
 #Gamma_0 (Zeroth iteration of Gamma)
 def Gamma_0(U,t):
@@ -14,12 +15,13 @@ def Gamma_0(U,t):
     # print(gamma_0)
     return gamma_0
 
-
+def NewGamma_0(U,t):
+   return 1/np.sinh((2*np.pi*t)/(-U))*(-(2*t)**2)
 # Simulation parameters
 t = 1.0
-U = -0.5
+U = -2.0
 
-beta = 1e50
+beta = 30*1/(np.abs(ZerothIterationofSelfEnergy(U,t)))
 ScaleFactor=1.5
 
 while True:
@@ -31,10 +33,11 @@ while True:
             #x_values = np.linspace(-0.5,0.5, Rezolution)
             omega_values= np.linspace(-5, 5, Rezolution)
             NumIteration= 100
-            Tolerance= 1e-5
+            Tolerance= 1e-12
             # Class initialization
-            MkF = MakeFunctions(beta, x_values, t,omega_values ,U)
-            IP= MakeIterationFuntions(beta,x_values, t,omega_values, U, NumIteration, Tolerance, Rezolution)
+            IP= MakeIterationFuntions(beta,x_values, t,omega_values, U, NumIteration,
+                                      Tolerance, Rezolution,
+                                      Gamma_0(U,t),ZerothIterationofSelfEnergy(U,t))
             IP.GiveFinalG()
             break
         else:
@@ -42,18 +45,6 @@ while True:
     except ValueError:
         print("Wrong Value Try it again.")
 
-
-#D=((1/np.pi)*MkF.FermiFunction(x_values)*MkF.SumOfComplexRations(x_values))
-# Calculate the Green function
-#G=MkF.G(omega_values)
-
-#print()
-# Calculate the function a = 1 - U * Y(0,0)
-#a = 1 - U * MkF.Y()[0]  # [0] is the result of integration, [1] is the error estimate
-#print("a = ", a)
-# Plotting
-#MkF.PlotData('D function', x_values, D, 'x' ,'D', 'D function plotting' )
-#MkF.PlotData('Green Function Real Part',omega_values, G, 'ω', 'G(ω)' , 'Green function plotting' )
 
 
 
