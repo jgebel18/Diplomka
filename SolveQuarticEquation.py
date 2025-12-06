@@ -1,11 +1,10 @@
 import numpy as np
-
-
 from MakeFunctions import MakeFunctions
 from scipy.interpolate import UnivariateSpline
 from numpy.lib.scimath import sqrt as csqrt
 from PlotingFunctions import PlottigFunctions
 from Class_for_testing_calculations import TestingCalculations
+import numericke_metody as NM
 class SolveQuarticEquation:
 
   #Here is a construction of class variables
@@ -15,14 +14,13 @@ class SolveQuarticEquation:
         self.x_values = x_values    # Array of x values
         self.t_value = t_value #Hopping parameter
         self.omegavalues=omega_values #omega for Greeen function                # Hopping parameter
-        self.U = U   #Electron Iteraction
-        self.Mkf= MakeFunctions(self.beta, self.x_values, self.t_value, self.omegavalues,self.U) # This calling of class is important for define another iterations
+        self.U=U   #Electron Iteraction
+        self.Mkf=MakeFunctions(self.beta, self.x_values, self.t_value, self.omegavalues,self.U) # This calling of class is important for define another iterations
         self.NumIteration=NumIterations #Num Iterations
         self.Rezolution=Rezolution #Rezolution
         self.Tolerance=Tolerance #Tolerance
-
-        self.PF=PlottigFunctions() # Calling of class with plotiing methods
-        self.Gamma_0= Gamma_0
+        self.PF=PlottigFunctions() #Calling of class with plotiing methods
+        self.Gamma_0=Gamma_0
         self.Sigma_0=Sigma_0
         self.TestingClass = TestingCalculations(self.beta, self.x_values, self.t_value, self.omegavalues, self.U,
                                                 self.NumIteration, self.Tolerance, self.Rezolution, self.Gamma_0, self.Sigma_0)
@@ -31,7 +29,7 @@ class SolveQuarticEquation:
     def a (self, Sigma):
         #print(self.Mkf.Y(Sigma))
         a= 1.0+self.U*self.Mkf.Y(Sigma)
-        print(a)
+        #print(a)
         return a
 
     #Another Iterations of Gamma
@@ -41,26 +39,30 @@ class SolveQuarticEquation:
         # self.TestingClass.CheckDominantTerminD()
         return Gamma
 
+#little gamma
     def gamma(self, Gamma):
         value= -Gamma/(2*self.t_value)**2
-        return value
-
+        #print(value)
+        return 1.0
+# W-coeficient in quartic equation
     def W(self, omega):
         return omega/(2*self.t_value)
-
-
+#Quartic equation solver
     def GiveSolutionofQuartic(self, Gamma, omega):
       coeffs=[1,-2j*self.W(omega),(1-self.W(omega)**2), 0,-(self.gamma(Gamma))**2]
+      #coeffs = [ -2j , -2*(self.W(omega)-1 ), 0, -(self.gamma(Gamma)) ** 2]
       return np.roots(coeffs)
 
+# Complete values of root
     def GiveValuesOfRoots(self,Gamma ):
         ValuesOfRoots= np.zeros((len(self.omegavalues),4),dtype=complex)
+        #ValuesOfRoots = np.zeros((len(self.omegavalues), 3), dtype=complex)
         for  i, omega in enumerate(self.omegavalues):
             ValuesOfRoots[i]= self.GiveSolutionofQuartic(Gamma, omega)
         self.ZeroOmegaCase(Gamma)
         print(self.GiveSolutionofQuartic(Gamma,0))
         return ValuesOfRoots
-
+#Zero iteration case
     def ZeroOmegaCase(self, Gamma):
         values_real_1, values_real_2 = (+csqrt(-0.5+csqrt((Gamma/(2*self.t_value)**2)**2+0.25)),
                                         -csqrt(-0.5+csqrt((Gamma/(2*self.t_value)**2)**2+0.25)))
@@ -69,28 +71,10 @@ class SolveQuarticEquation:
         print(np.array([values_real_1, values_real_2,values_imag_1, values_imag_2]))
 
 
-    def SeparateRealandImagPart(self, values):
-        imag_part = np.zeros(len(self.omegavalues), dtype=complex)
-        real_part = np.zeros(len(self.omegavalues), dtype=complex)
-        for i in range(len(self.omegavalues)):
-            z2, z3 = values[i][2], values[i][3]
-            # vyber ten, který má zápornou imaginární část
-            if z2.imag < 0 :
-                imag_part[i] = z2
-            elif z3.imag <0 :
-                imag_part[i] = z3
-            else:
-                # pokud mají obě imaginární části stejné znaménko,
-                # vyber ten s více zápornou imag. složkou
-                imag_part[i] = z2 if z2.imag <= z3.imag else z3
-            # výběr reálné části podle znaménka frekvence
-            if self.omegavalues[i] >= 0:
-                real_part[i] = z2 if z2.real > 0 else z3
-            else:
-                real_part[i] = z2 if z2.real < 0 else z3
-        return real_part + imag_part
 
 
+
+#Generate complete solution of quaric equation
     def GenerateSolution(self, Gamma):
         values= -1j*self.GiveValuesOfRoots(Gamma)*2*self.t_value
         self.PF.PlotRootsOfEquation(values.T, self.omegavalues)
