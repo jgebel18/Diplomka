@@ -1,13 +1,32 @@
 import matplotlib.pyplot as plt
 import matplotlib
 import numpy as np
-
 matplotlib.use("TkAgg")
 
 #Dear Sunil,
 #I created this class because we had too many scattered plotting functions, so I decided to centralize them.
 
 class PlottigFunctions:
+    #Ploting Integrands for Values of Sigma,
+    def PlotingItegrands(self, D_array, Y_array ,x_values, ):
+        fig , axes = plt.subplots(2,1, figsize=(10,10))
+        for i in range(D_array.shape[0]):
+            axes[0].plot(x_values, D_array[i], label=f"{i}-Iteration")
+            axes[1].plot(x_values, Y_array[i], label=f"{i}-Iteration")
+            axes[0].set_title("D-Integrands-Iterations")
+            axes[1].set_title("Y-Integrands-Iterations")
+            axes[0].set_xlabel('x')
+            axes[1].set_xlabel('x')
+            axes[0].set_ylabel('D-Itegrands')
+            axes[1].set_ylabel('Y-Itegrands')
+            axes[0].legend()
+            axes[1].legend()
+            axes[0].grid(True)
+            axes[1].grid(True)
+        plt.savefig(f'Integrands_for_Interpolated_Values.png')
+        plt.show()
+
+
     #Here is a function that can polt all in tegrands in different values of beta
     def PlotIntegrandsfordifferentbetavalues(self,beta,x_values, integrand_2, integrand_3):
         fig, ax = plt.subplots()
@@ -120,6 +139,7 @@ class PlottigFunctions:
         ax.set_xlabel("ω")
         ax.set_ylabel("Σ(ω)")
         ax.legend()
+        plt.savefig("Interpolated_Sigma.png")
         plt.show()
 
 # This is function for plting every root of quartic equation in the dependence of omega
@@ -194,4 +214,23 @@ class PlottigFunctions:
         #plt.tight_layout(rect=[0, 0, 1, 0.96])  # aby nebyl překryt hlavní titulek
 
         plt.savefig(nazev + '_subplots.png', dpi=300)
+        plt.show()
+
+    def Plot_Values_of_a_and_D(self, values_a, Values_D,D_approx,
+                               Gamma_Values):
+        len = 5
+        nazev='Values_of_Y_D.png'
+        D_control= Values_D*Gamma_Values**2
+        plt.figure(figsize=(10, 10))
+        #plt.scatter(Gamma_Values, values_a, label= 'Values of Y(0,0) ')
+        #plt.scatter(Gamma_Values, Values_D, label= 'Values of D')
+        plt.scatter(Gamma_Values, D_approx ,label='D approx')
+        #plt.plot(Gamma_Values[len], values_a[len], 'rv', label='MidPoint for a ')
+        #plt.plot(Gamma_Values[len], Values_D[len], 'gv', label= 'Midpoint for D')
+        plt.scatter(Gamma_Values, D_control, label= 'D control')
+        plt.grid(True)
+        plt.legend()
+        plt.xlabel('Gamma')
+        plt.ylabel('Values of Y and D ')
+        plt.savefig(nazev)
         plt.show()
