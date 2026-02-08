@@ -2,11 +2,15 @@ import matplotlib.pyplot as plt
 import matplotlib
 import numpy as np
 matplotlib.use("TkAgg")
-
+import os
 #Dear Sunil,
 #I created this class because we had too many scattered plotting functions, so I decided to centralize them.
 
 class PlottigFunctions:
+    def __init__(self):
+        self.Path_Files='Files'
+        self.Path_Images='Images'
+
     #Ploting Integrands for Values of Sigma,
     def PlotingItegrands(self, D_array, Y_array ,x_values, ):
         fig , axes = plt.subplots(2,1, figsize=(10,10))
@@ -199,7 +203,8 @@ class PlottigFunctions:
         plt.ylabel('Σ(ω)')
         plt.title('Complete Roots of Quartic equation')
         plt.show()
-
+    #Here is method to ploting our specific root of
+    # quartic equation solved by nonlinear method
     def PlotRootOfEquation(self, root, omega):
         nazev = 'Self-Energy for root of nonlinear equation'
         plt.figure( figsize=(10, 12))
@@ -216,21 +221,39 @@ class PlottigFunctions:
         plt.savefig(nazev + '_subplots.png', dpi=300)
         plt.show()
 
-    def Plot_Values_of_a_and_D(self, values_a, Values_D,D_approx,
-                               Gamma_Values):
-        len = 5
-        nazev='Values_of_Y_D.png'
+#This method plots Values for Y a D for specific Gamma values into
+    #one picture and save this picture
+    def Plot_Values_of_a_and_D(self, values_Y, Values_D,values_Y_approx,
+                               values_D_approx,
+                               Gamma_Values, beta):#, beta_values):
+
+        #for i in range( len(beta_values)):
+        Images_path = 'Images'
         D_control= Values_D*Gamma_Values**2
-        plt.figure(figsize=(10, 10))
-        #plt.scatter(Gamma_Values, values_a, label= 'Values of Y(0,0) ')
-        #plt.scatter(Gamma_Values, Values_D, label= 'Values of D')
-        plt.scatter(Gamma_Values, D_approx ,label='D approx')
-        #plt.plot(Gamma_Values[len], values_a[len], 'rv', label='MidPoint for a ')
-        #plt.plot(Gamma_Values[len], Values_D[len], 'gv', label= 'Midpoint for D')
-        plt.scatter(Gamma_Values, D_control, label= 'D control')
-        plt.grid(True)
-        plt.legend()
-        plt.xlabel('Gamma')
-        plt.ylabel('Values of Y and D ')
+        D_control_approx= values_D_approx
+        Y_control= values_Y
+        Y_control_approx=values_Y_approx
+
+        #for i in
+        nazev=os.path.join(Images_path,f'Values_of_Y_D_beta_{beta}.png')
+        nazev_2=os.path.join(Images_path, f'Values_of_D_beta{beta}.png')
+        fig, axes  = plt.subplots(1,2, figsize=(10,10))
+        axes[0].scatter(Gamma_Values, D_control, label='D')
+        axes[0].scatter(Gamma_Values, D_control_approx, label='D_approx')
+        axes[0].plot(Gamma_Values, D_control-D_control_approx, label='D_diff')
+        axes[0].set_xlabel('Gamma')
+        axes[0].set_ylabel('D')
+        axes[0].legend()
+        axes[0].grid(True)
+        axes[1].scatter(Gamma_Values, Y_control, label='Y')
+        axes[1].scatter(Gamma_Values, Y_control_approx, label='Y_approx')
+        axes[1].plot(Gamma_Values, Y_control - Y_control_approx, label='Y_diff')
+        axes[1].set_xlabel('Gamma')
+        axes[1].set_ylabel('Y(0,0)')
+        axes[1].legend()
+        axes[1].grid(True)
+        fig.suptitle(f'Values of Y and D for beta={beta}')
+        fig.tight_layout(rect=[0, 0, 1, 0.95])
+        plt.title(f'Values of Y and D for beta={beta}')
         plt.savefig(nazev)
         plt.show()

@@ -3,7 +3,6 @@ import scipy.integrate as integrate
 from numpy.lib.scimath import sqrt as csqrt
 from PlotingFunctions import PlottigFunctions
 
-
 class MakeFunctions_Gamma:
 
     def __init__(self, beta, x_values, t_value, omega_values, U):
@@ -12,7 +11,6 @@ class MakeFunctions_Gamma:
         self.t_value = t_value
         self.omega_values = omega_values
         self.U = U
-
         self.PF = PlottigFunctions()
         self.D_Iterations = []
         self.Y_Iterations = []
@@ -72,16 +70,18 @@ class MakeFunctions_Gamma:
         return result
 
     def Y_approx(self, Gamma):
-     return -2/(32*self.t_value*
-                np.pi*csqrt(1+(Gamma/(2*self.t_valuet)
-                         **2)**2))
+         denom=-Gamma/(2*self.t_value)**2
+         first_term= 1/(2*np.pi*self.t_value)
+         numerator= np.sqrt(1+(denom**2)) +1
+         return first_term *np.log(numerator/denom)
+
     def D_approx(self, Gamma):
-        const_in_front= 1/(16*np.pi*self.t_value)
-        denom= -Gamma/(2*self.t_value)**2
-        first_term=np.log((np.sqrt(1+(Gamma/(2*self.t_value)**2)**2)+1)/(denom))
-        second_term= np.sqrt(1+(Gamma/(2*self.t_value)**2)**2)/denom**2
-        result= const_in_front*(first_term-second_term)
-        return result*Gamma**2
+        const_in_front = 1 / (16 * np.pi * self.t_value)
+        denom = -Gamma / (2 * self.t_value) ** 2
+        first_term = np.log((np.sqrt(1 + (Gamma / (2 * self.t_value) ** 2) ** 2) + 1) / (denom))
+        second_term = np.sqrt(1 + (Gamma / (2 * self.t_value) ** 2) ** 2) / denom ** 2
+        result = const_in_front * (first_term - second_term)
+        return result * Gamma ** 2
 
 
      #   return()

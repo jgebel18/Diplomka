@@ -2,6 +2,7 @@ import numpy as np
 from MakeFunctions import MakeFunctions
 from scipy.interpolate import UnivariateSpline
 from scipy.optimize import newton
+from scipy.optimize import root_scalar
 from numpy.lib.scimath import sqrt as csqrt
 from scipy.interpolate import PchipInterpolator
 from PlotingFunctions import PlottigFunctions
@@ -12,7 +13,7 @@ class MakeIterationProcessforGamma:
   #Here is a construction of class variables
     def __init__(self, beta, x_values, t_value, omega_values, U,
                  NumIterations, Tolerance, Rezolution,Gamma_0, Sigma_0):
-        self.beta = beta            # Inverse temperature
+        self.beta = beta           # Inverse temperature
         self.x_values = x_values    # Array of x values
         self.t_value = t_value #Hopping parameter
         self.omegavalues=omega_values #omega for Greeen function                # Hopping parameter
@@ -22,21 +23,22 @@ class MakeIterationProcessforGamma:
         self.Rezolution=Rezolution #Rezolution
         self.Tolerance=Tolerance #Tolerance
         self.PF=PlottigFunctions() # Calling of class with plotiing methods
-        self.Gamma_0= 0
-        self.step= 2
-        self.num_steps=5
+        self.Gamma_0=0
+        self.step= 0.01
+        self.num_steps=100
+        self.Path_Files='Files'
+        self.Path_Images='Images'
         self.Sigma_0=Sigma_0
-        self.Gamma_values_left=np.linspace(self.Gamma_0-self.num_steps*self.step, self.Gamma_0, self.num_steps+1)
-        self.Gamma_values_right= np.linspace(self.Gamma_0, self.Gamma_0+0.05, self.num_steps+1)
-        self.Gamma_values= np.unique(np.concatenate((self.Gamma_values_left,
-                                                     self.Gamma_values_right)))
+        self.Gamma_values=np.linspace(self.Gamma_0-self.num_steps*self.step, self.Gamma_0, self.num_steps+1)
+        #self.Gamma_values_right= np.linspace(self.Gamma_0, self.Gamma_0+self.num_steps*self.step, self.num_steps+1)
+        #np.unique(np.concatenate((self.Gamma_values_left,
+                            #                         self.Gamma_values_right)))
         self.TestingClass = TestingCalculations(self.beta, self.x_values, self.t_value, self.omegavalues, self.U,
                                                 self.NumIteration, self.Tolerance,
                                                 self.Rezolution, self.Gamma_0,
                                                 self.Sigma_0)
         self.Gamma=self.Gamma_0
-        self.a_values=None
-        self.D_values= None
+
         self.D2_values_Sigma= None
 
 
@@ -187,14 +189,20 @@ class MakeIterationProcessforGamma:
 
     # This function Gives  Green function
     def GiveFinalG(self):
-        self.D2_values_Sigma=np.array([self.GenerateSolution(Gamma) for Gamma in self.Gamma_values])
-        Sigma_approxmations= np.array([self.InterpolateOfSigmaValues(Sigma, self.omegavalues) for Sigma in (self.D2_values_Sigma)])
+        D_approx= np.empty(len(self.Gamma_values))
+        Y_approx= np.empty(len(self.Gamma_values))
+        D_values = np.empty(len(self.Gamma_values))
+        Y_values = np.empty(len(self.Gamma_values))
+        for i, Gamma in enumerate(self.Gamma_values):
+            Sigma= self.GenerateSolution(Gamma)
+            Sigma_aprox=self.InterpolateOfSigmaValues(Sigma, self.omegavalues)
+            Y_values[i]=self.Mkf.Y(Sigma_aprox)
+            D_values[i]= self.Mkf.D(Sigma_aprox)
+            D_approx[i] = self.Mkf.D_approx(Gamma)
+            Y_approx[i]=self.Mkf.Y_approx(Gamma)
 
-
-        self.a_values= np.array([self.Mkf.Y(Sigma) for Sigma in Sigma_approxmations])
-        self.D_values= np.array([self.Mkf.D(Sigma ) for Sigma in Sigma_approxmations])
-        D_approx_values = np.array([self.Mkf.D_approx(Gamma) for Gamma in self.Gamma_values])
-        self.PF.Plot_Values_of_a_and_D(self.a_values, self.D_values,D_approx_values,  self.Gamma_values)
+        self.PF.Plot_Values_of_a_and_D(Y_values, D_values,Y_approx,D_approx,
+                                       self.Gamma_values, self.beta)
 
 
         #SigmaValues, SigmaIterations = self.Iterationprocess()
