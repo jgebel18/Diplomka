@@ -5,91 +5,100 @@ from PlotingFunctions import PlottigFunctions
 
 
 class MakeFunctions:
-    # Constructor with physical parameters
+
     def __init__(self, beta, x_values, t_value, omega_values, U):
-        self.beta = beta            # Inverse temperature
-        self.x_values = x_values    # Array of x values
-        self.t_value = t_value     # Hopping parameter
-        self.omega_vlaues= omega_values #omega values
-        self.U = U      # Electron interaction
-        self.PF= PlottigFunctions()
+        self.beta = beta
+        self.x_values = x_values
+        self.t_value = t_value
+        self.omega_values = omega_values
+        self.U = U
 
+        self.PF = PlottigFunctions()
+        self.D_Iterations = []
+        self.Y_Iterations = []
 
+    # ================= BASIC FUNCTIONS =================
 
-
-    # Imaginary part in integrand of Y
-    def ComplexFrac_in_Y(self, x, Sigma):
-        denom = csqrt(4 * self.t_value**2 - (-(x) + Sigma)**2)
-        #print((1/csqrt(4 * self.t_value**2 - (-(-2) + Sigma)**2)).real)
-        frac = 1 / (denom * (-x + Sigma))
-        return frac.real
-
-    # Fermi function
     def FermiFunction(self, x):
         return 1 / (np.exp(self.beta * x) + 1)
 
-    # When we into D eqution in the outline for numerics we see that D is defined by Fermi function
-    # and three rations here we defined all of them part by part and Here is a First part
-    def FirstDRatio(self, x,Sigma):
-        #Sigma=self.FirstIterationofSelfEnergy()
-        First_ratio= 2*self.ComplexFrac_in_Y(x, Sigma)
-        return First_ratio
+    def ComplexFrac_in_Y(self, x, Sigma):
+        if np.ndim(Sigma) != 0:
+            raise ValueError("Sigma must be scalar")
 
-    # Here is a second Part of
-    def SecondDRation(self,x,Sigma):
-        #Sigma=self.FirstIterationofSelfEnergy()
-        denom=(csqrt(4 * self.t_value**2 - (-(x) + Sigma)**2))**3
-        frac=(x-Sigma)/denom
-        return -2*frac.real
+        denom = csqrt(4 * self.t_value**2 - (-(x) + Sigma)**2)
+        return (1 / (denom * (-x + Sigma))).real
 
-    #Here is a Third Part
-    def ThirdDRation(self,x,Sigma):
-        FirstPartofDenom=(-x+Sigma)
-        denom = (FirstPartofDenom*csqrt(4 * self.t_value ** 2 - (-(x) + Sigma) ** 2)) ** 3
-        frac= (8*self.t_value**2-3*FirstPartofDenom**2)/denom
-        return 8*(self.t_value**2)*frac.real
+    # ================= D RATIOS =================
 
-    #Here is a sumation of alll rations
+    def FirstDRatio(self, x, Sigma):
+        return 2 * self.ComplexFrac_in_Y(x, Sigma)
+
+    def SecondDRation(self, x, Sigma):
+        denom = csqrt(4 * self.t_value**2 - (-(x) + Sigma)**2)**3
+        return -2 * ((x - Sigma) / denom).real
+
+    def ThirdDRation(self, x, Sigma):
+        fp = (-x + Sigma)
+        denom = (fp * csqrt(4 * self.t_value**2 - (-(x) + Sigma)**2))**3
+        frac = (8 * self.t_value**2 - 3 * fp**2) / denom
+        return 8 * self.t_value**2 * frac.real
+
     def SumOfComplexRations(self, x, Sigma):
-        sum= ((1/16)*(self.FirstDRatio(x,Sigma)+self.SecondDRation(x,Sigma)+self.ThirdDRation(x,Sigma)))
-        #self.PF.PlotIntegrands('Integrands of D', self.x_values, self.FirstDRatio(self.x_values,Sigma),'1st-Ratio' ,
-                            #self.SecondDRation(self.x_values,Sigma),'2nd-Ratio', self.ThirdDRation(self.x_values,Sigma), '3rd-Ratio')
-        return sum
+        return (1/16) * (
+            self.FirstDRatio(x, Sigma)
+            + self.SecondDRation(x, Sigma)
+            + self.ThirdDRation(x, Sigma)
+        )
 
-    #Here is a function of Test integrand of left side
-    def TestingIntegrandLeftSide(self, x, Sigma, beta):
-        FirstPart = np.tanh((beta * x) / 2)
-        SecondPart = (2 / (x - (1 + 1j) * Sigma) ** 3)
-        return FirstPart * SecondPart.imag
+    # ================= INTEGRALS (SCALAR ONLY) =================
 
-
-    #Here is a testing integrand of left side
-    def TestingIntegrandRightSide(self, x, Sigma ,beta):
-        FirstPart = (((beta) / 2) ** 2 * (-2) * np.tanh((beta * x) / 2) * (
-                    1 - np.tanh((beta * x) / 2) ** 2))
-        SecondPart = (1 / (x - (1 + 1j) * Sigma))
-        return FirstPart * SecondPart.imag
-
-    # def InterpolateValuesofSigma(self, Sigma_values ):
-    # Calculate Integral in D
     def D(self, Sigma):
-        integrand = lambda x: (1 / np.pi) * self.FermiFunction(x) * self.SumOfComplexRations(x, Sigma(x))
-        result, error = integrate.quad_vec(integrand, -np.inf,np.inf)
-        print(result)
-        #print(-4*(self.Gamma_0()/2))
+        def integrand(x):
+            sig = Sigma(float(x)).item()
+            return (1 / np.pi) * self.FermiFunction(x) * self.SumOfComplexRations(x, sig)
+
+        result, error = integrate.quad_vec(integrand, -np.inf, np.inf)
         return result
 
-    #Calculate Integral in Y(0,0)
-    def Y(self,Sigma):
-        integrand = lambda x: (1 / np.pi) * self.FermiFunction(x) * self.ComplexFrac_in_Y(x,Sigma(x))
-        result,error = integrate.quad(integrand, -np.inf,  np.inf)
+    def Y(self, Sigma):
+        def integrand(x):
+            sig = Sigma(float(x)).item()
+            return (1 / np.pi) * self.FermiFunction(x) * self.ComplexFrac_in_Y(x, sig)
+
+        result, error = integrate.quad_vec(integrand, -np.inf, np.inf)
         return result
 
+    # ================= ITERATION DATA =================
 
-    #Here id a Green Function in the dependence of complex omega
-    def G(self, omega ,Sigma):
-        #Sigma=self.FirstIterationofSelfEnergy()
-        reader= -1j
-        denominator=csqrt(4 * self.t_value**2 - ((-1)*(omega) + Sigma(omega))**2)
-        frac=reader/denominator
-        return frac#, frac.imag
+    def D_Integrand(self, Sigma):
+        values = np.zeros_like(self.x_values, dtype=complex)
+        for i, x in enumerate(self.x_values):
+            sig = Sigma(float(x)).item()
+            values[i] = (1 / np.pi) * self.FermiFunction(x) * self.SumOfComplexRations(x, sig)
+
+        self.D_Iterations.append(values)
+
+    def Y_Integrand(self, Sigma):
+        values = np.zeros_like(self.x_values, dtype=complex)
+        for i, x in enumerate(self.x_values):
+            sig = Sigma((x)).item()
+            values[i] = (1 / np.pi) * self.FermiFunction(x) * self.ComplexFrac_in_Y(x, sig)
+
+        self.Y_Iterations.append(values)
+
+    # ================= GREEN FUNCTION =================
+
+    def G(self, omega, Sigma):
+        sig = Sigma(float(omega))
+        denom = csqrt(4 * self.t_value**2 - ((-omega + sig)**2))
+        return (-1j / denom)
+
+    # ================= PLOTTING =================
+
+    def CollectDataAndPlot(self, Sigma):
+        self.Y_Integrand(Sigma)
+        self.D_Integrand(Sigma)
+        D_array = np.vstack(self.D_Iterations)
+        Y_array = np.vstack(self.Y_Iterations)
+        self.PF.PlotingItegrands(D_array, Y_array, self.x_values)

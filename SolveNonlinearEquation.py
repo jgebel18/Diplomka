@@ -5,6 +5,8 @@ from numpy.lib.scimath import sqrt as csqrt
 from PlotingFunctions import PlottigFunctions
 from Class_for_testing_calculations import TestingCalculations
 from numericke_metody import nonlin_equations
+from scipy.interpolate import interp1d
+from scipy.interpolate import PchipInterpolator
 from scipy.optimize import newton
 from scipy.optimize import root_scalar
 class SolveNonlinearEquation:
@@ -39,6 +41,7 @@ class SolveNonlinearEquation:
         DotofItegrals= csqrt(2/(self.Mkf.D(Sigma)*self.U))
         Gamma= (self.U/(self.beta*np.pi))*DotofItegrals*(1/csqrt( self.a(Sigma)))
         # self.TestingClass.CheckDominantTerminD()
+        #self.Mkf.CollectDataAndPlot()
         return Gamma
  #little Gamma
     def gamma(self, Gamma):
@@ -50,7 +53,7 @@ class SolveNonlinearEquation:
     def W(self, omega):
         return omega/(2*self.t_value)
 
-#Quartic equation
+    #Quartic equation
     def QuarticEquation(self,s, Gamma, omega):
         equation= s**4-2j*self.W(omega)*s**3+(1-self.W(omega)**2)*s**2-self.gamma(Gamma)**2
         return equation
@@ -121,18 +124,18 @@ class SolveNonlinearEquation:
     def Iterationprocess(self):
         Sigma = self.Sigma_0
         SigmaIterations = []
-        SigmaValues = np.full(len(self.omegavalues), Sigma)
+        SigmaValues = np.full(len(self.omegavalues), Sigma, dtype=complex)
         NewSigma=None
         #SigmaIterations.append(SigmaValues)
         for i in range(self.NumIteration):
             Sigma = self.InterpolateOfSigmaValues(SigmaValues, self.omegavalues)
+            self.Mkf.CollectDataAndPlot(Sigma)
             self.PF.PlotSigmaFunction(self.omegavalues,Sigma, SigmaValues)
             self.PrintEveryParameter(i,Sigma)
             SigmaIterations.append(Sigma)
             Gamma=self.Gamma(Sigma)
             NewSigma = self.GenerateSolution(Gamma)#self.NewSigma(self.omegavalues, Sigma, i) #Calculating Sigma
-            #self.PF.PlotGreenFunction(self.omegavalues, self.Mkf.G, SigmaIterations, np.array(SigmaIterations).size)
-            #self.PF.PlotSigmaFunction(self.omegavalues, np.array(SigmaIterations))#Plotting of all iterations of sigma
+
             # Tolerance check
             if self.CheckingforContinue(SigmaValues,NewSigma)==True:
                 return NewSigma, np.array(SigmaIterations)
@@ -146,8 +149,8 @@ class SolveNonlinearEquation:
 # Sunil Here is the key method which is in the middle of our interest
     def InterpolateOfSigmaValues(self, SigmaValues, OmegaValues,):
         # Interpolace reálné a imaginární části zvlášť
-        SplineOmegaImag = UnivariateSpline(OmegaValues, np.imag(SigmaValues), s=0)
-        SplineOmegaReal = UnivariateSpline(OmegaValues, np.real(SigmaValues), s=0)
+        SplineOmegaImag = PchipInterpolator(OmegaValues, SigmaValues.imag)#UnivariateSpline(OmegaValues, np.imag(SigmaValues), s=0)
+        SplineOmegaReal =PchipInterpolator(OmegaValues, SigmaValues.real)# UnivariateSpline(OmegaValues, np.real(SigmaValues), s=0)
         SplineOmega = lambda x: SplineOmegaReal(x) + 1j * SplineOmegaImag(x)
         return SplineOmega
 

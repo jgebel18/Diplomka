@@ -188,7 +188,6 @@ class PlottigFunctions:
                 axes[i].set_xlabel('ω')
                 axes[i].set_ylabel('Σ(ω)')
         fig.suptitle(nazev)
-
         plt.tight_layout(rect=[0, 0, 1, 0.96])  # aby nebyl překryt hlavní titulek
         plt.savefig(nazev + '_subplots.png', dpi=300)
         plt.show()

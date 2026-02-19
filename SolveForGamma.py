@@ -2,6 +2,8 @@ import numpy as np
 from MakeFunctions import MakeFunctions
 from scipy.interpolate import UnivariateSpline
 from scipy.optimize import newton
+from scipy.optimize import root
+
 from scipy.optimize import root_scalar
 from numpy.lib.scimath import sqrt as csqrt
 from scipy.interpolate import PchipInterpolator
@@ -25,6 +27,7 @@ class MakeIterationProcessforGamma:
         self.PF=PlottigFunctions() # Calling of class with plotiing methods
         self.Gamma_0=0
         self.step= 0.01
+        self.epsilon= 1e-3
         self.num_steps=100
         self.Path_Files='Files'
         self.Path_Images='Images'
@@ -77,6 +80,31 @@ class MakeIterationProcessforGamma:
         equation = 4 * s ** 3 - 6j * self.W(omega) * s ** 2 + 2 * (1 - self.W(omega) ** 2) * s
         return equation
 
+
+    def QuarticEquation2ndDerivative(self, s, Gamma, omega):
+        equation = 12 * s ** 2 - 12j * self.W(omega) * s  + 2 * (1 - self.W(omega) ** 2)
+        return equation
+
+
+    def NonlinearEquation(self, s, Gamma, omega):
+        W=self.W(omega) + self.epsilon* 1j
+        numerator = self.gamma(Gamma)
+        denominator = np.sqrt(1 + (s - (W) * 1j) ** 2)
+        return s - numerator / denominator
+
+
+    def NonlinearEquationDerivative(self, s, Gamma, omega):
+        W=(self.W(omega) + self.epsilon * 1j)
+        numerator = -self.gamma(Gamma) * (s - 1j * W)
+        denominator = (1 + (s - (W) * 1j) ** 2) ** (3/2)
+        # denominator= (csqrt(1+(s-self.W(omega)*1j)**2)*csqrt(1+(s-self.W(omega)*1j)**2)
+        #             *csqrt(1+(s-self.W(omega)*1j)**2))
+        return (1 - numerator / denominator)
+
+
+
+
+
     # Phi function for simple iteration method
     def QuarticFunctionPhi(self, s, Gamma, omega):
         numerator = (self.gamma(Gamma) ** 2)
@@ -84,45 +112,59 @@ class MakeIterationProcessforGamma:
         return numerator / denom
 
     # Nonlinear equation solver
-    def GiveSolutionofNonlinear(self, Gamma, omega):
-        # solution = nonlin_equations.newton(f= self.QuarticEquation,
-        #                                  df=self.QuarticEquationDerivative, args=(Gamma,omega) , x0=0.95+0j)
-        solution = newton(func=self.QuarticEquation, args=(Gamma, omega),
-                          fprime=self.QuarticEquationDerivative, x0=2.0, maxiter=1000)
-        root = solution
-        return root
+
+
+    def GiveSolutionofNonlinear(self, Gamma, ):
+        complete_solution = np.empty(len(self.omegavalues), dtype=complex)
+        omega_0 = 1.0+1.0*1j
+        for i, omega in enumerate(self.omegavalues):
+            # solution = nonlin_equations.newton(f= self.QuarticEquation,
+            #                                  df=self.QuarticEquationDerivative, args=(Gamma,omega) , x0=0.95+0j)
+            solution = root_scalar(f=self.NonlinearEquation, method='newton', args=(Gamma, omega),
+                                   fprime=self.NonlinearEquationDerivative, x0=omega_0, maxiter=1000)
+            complete_solution[i] = solution.root
+
+        return complete_solution
+
 
     # Quartic equation solver
     def GiveSolutionofQuartic(self, Gamma, omega):
-        coeffs = [1, -2j * self.W(omega), (1 - self.W(omega) ** 2), 0, -(self.gamma(Gamma)) ** 2]
-        # coeffs = [ -2j , -2*(self.W(omega)-1 ), 0, -(self.gamma(Gamma)) ** 2]
-        return np.roots(coeffs)
+
+        complete_solution=np.empty((self.omegavalues, 4) , dtype=complex)
+        solution_old=np.zeros(4, dtype=complex)
+        distances=np.empty((4,4), dtype=float)
+        for i,  omega in enumerate(self.omegavalues):
+            coeffs = [1, -2j * self.W(omega), (1 - self.W(omega) ** 2), 0, -(self.gamma(Gamma)) ** 2]
+            solution= np.roots(coeffs)
+            for j in range(4):
+                for k in range(4):
+                    distances[j][k]=np.abs(solution[j]-solution_old[k])
+                l= np.argmin(distances[j])
+                complete_solution[i][j] = solution[l]
+            solution_old= solution
+
+        return complete_solution
 
     # Complete values of root for every values of omega
-    def GiveValuesOfRoots(self, Gamma):
-        ValuesOfRoots = np.zeros(len(self.omegavalues), dtype=complex)
-        ValuesOfRoots_2 = np.zeros((len(self.omegavalues), 4), dtype=complex)
-        for i, omega in enumerate(self.omegavalues):
-            ValuesOfRoots[i] = self.GiveSolutionofNonlinear(Gamma, omega)
-            ValuesOfRoots_2[i] = self.GiveSolutionofQuartic(Gamma, omega)
-        self.ZeroOmegaCase(Gamma)
-        #print(self.GiveSolutionofNonlinear(Gamma, 0.0))
-        return ValuesOfRoots, ValuesOfRoots_2
+
+
+
 
     # Trhis function return zero omega cese which is more comfortable to solve analithicaly
     def ZeroOmegaCase(self, Gamma):
         values_real_1, values_real_2 = (+csqrt(-0.5 + csqrt((Gamma / (2 * self.t_value) ** 2) ** 2 + 0.25)),
                                         -csqrt(-0.5 + csqrt((Gamma / (2 * self.t_value) ** 2) ** 2 + 0.25)))
         values_imag_1, values_imag_2 = (+1j * csqrt(0.5 + csqrt((Gamma / (2 * self.t_value) ** 2) ** 2 + 0.25)),
-                                        -1j * csqrt(-0.5 + csqrt((Gamma / (2 * self.t_value) ** 2) ** 2 + 0.25)))
-        #print(np.array([values_real_1, values_real_2, values_imag_1, values_imag_2]))
+                                        -1j * csqrt(0.5 + csqrt((Gamma / (2 * self.t_value) ** 2) ** 2 + 0.25)))
+        print(np.array([values_real_1, values_real_2, values_imag_1, values_imag_2]))
+        return np.array([values_real_1, values_real_2, values_imag_1, values_imag_2])
+
 
     # This function generate the solution of both equation
     def GenerateSolution(self, Gamma):
-        values, values_quartic = self.GiveValuesOfRoots(Gamma)
-        values = values.reshape(-1, 1)
-        complete_values = np.hstack([-1j * values * 2 * self.t_value, -1j * values_quartic * 2 * self.t_value])
-        #self.PF.PlotRootsOfEquation(complete_values.T, self.omegavalues)
+        values=self.GiveSolutionofNonlinear(Gamma)
+        #print('omega, roots',(self.omegavalues,values))
+        self.PF.PlotRootOfEquation(-1j * values * 2 * self.t_value, self.omegavalues)
         return -1j * values * 2 * self.t_value
 
     # Here is a function to plotting every parameter of this Iteration Process
