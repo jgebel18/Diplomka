@@ -18,7 +18,6 @@ class MakeIterationFuntions:
         self.NumIteration=NumIterations #Num Iterations
         self.Rezolution=Rezolution #Rezolution
         self.Tolerance=Tolerance #Tolerance
-
         self.PF=PlottigFunctions() # Calling of class with plotiing methods
         self.Gamma_0= Gamma_0
         self.Sigma_0=Sigma_0
@@ -111,6 +110,7 @@ class MakeIterationFuntions:
 
     #This function Gives  Green function
     def GiveFinalG(self):
+
         SigmaValues, SigmaIterations = self.Iterationprocess()
         #Sigma= self.InterpolateOfSigmaValues( SigmaValues,self.omegavalues)
         #self.TestingClass.CheckLeftSideIntegrand()

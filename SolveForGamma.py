@@ -27,7 +27,7 @@ class MakeIterationProcessforGamma:
         self.PF=PlottigFunctions() # Calling of class with plotiing methods
         self.Gamma_0=0
         self.step= 0.01
-        self.epsilon= 1e-3
+        self.epsilon= np.array([1e-3, 1e-4,1e-5, 1e-6, 1e-7, 1e-8])
         self.num_steps=100
         self.Path_Files='Files'
         self.Path_Images='Images'
@@ -86,15 +86,15 @@ class MakeIterationProcessforGamma:
         return equation
 
 
-    def NonlinearEquation(self, s, Gamma, omega):
-        W=self.W(omega) + self.epsilon* 1j
+    def NonlinearEquation(self, s, Gamma,eps, omega):
+        W=self.W(omega) + eps* 1j
         numerator = self.gamma(Gamma)
         denominator = np.sqrt(1 + (s - (W) * 1j) ** 2)
         return s - numerator / denominator
 
 
-    def NonlinearEquationDerivative(self, s, Gamma, omega):
-        W=(self.W(omega) + self.epsilon * 1j)
+    def NonlinearEquationDerivative(self, s, Gamma, eps, omega):
+        W=(self.W(omega) + eps * 1j)
         numerator = -self.gamma(Gamma) * (s - 1j * W)
         denominator = (1 + (s - (W) * 1j) ** 2) ** (3/2)
         # denominator= (csqrt(1+(s-self.W(omega)*1j)**2)*csqrt(1+(s-self.W(omega)*1j)**2)
@@ -118,34 +118,40 @@ class MakeIterationProcessforGamma:
         complete_solution = np.empty(len(self.omegavalues), dtype=complex)
         omega_0 = 1.0+1.0*1j
         for i, omega in enumerate(self.omegavalues):
+
             # solution = nonlin_equations.newton(f= self.QuarticEquation,
             #                                  df=self.QuarticEquationDerivative, args=(Gamma,omega) , x0=0.95+0j)
             solution = root_scalar(f=self.NonlinearEquation, method='newton', args=(Gamma, omega),
-                                   fprime=self.NonlinearEquationDerivative, x0=omega_0, maxiter=1000)
+                                    fprime=self.NonlinearEquationDerivative, x0=omega_0, maxiter=1000)
+
+
+
             complete_solution[i] = solution.root
 
         return complete_solution
 
 
-    # Quartic equation solver
-    def GiveSolutionofQuartic(self, Gamma, omega):
+    def GiveSolutionofNonlinearEps(self, Gamma, ):
+        complete_solution = np.empty(( self.epsilon.size, self.omegavalues.size), dtype=complex)
+        omega_0 = self.omegavalues[0]
+        for i, epsilon  in enumerate(self.epsilon):
+            for j, omega in enumerate(self.omegavalues):
 
-        complete_solution=np.empty((self.omegavalues, 4) , dtype=complex)
-        solution_old=np.zeros(4, dtype=complex)
-        distances=np.empty((4,4), dtype=float)
-        for i,  omega in enumerate(self.omegavalues):
-            coeffs = [1, -2j * self.W(omega), (1 - self.W(omega) ** 2), 0, -(self.gamma(Gamma)) ** 2]
-            solution= np.roots(coeffs)
-            for j in range(4):
-                for k in range(4):
-                    distances[j][k]=np.abs(solution[j]-solution_old[k])
-                l= np.argmin(distances[j])
-                complete_solution[i][j] = solution[l]
-            solution_old= solution
 
+                # solution = nonlin_equations.newton(f= self.QuarticEquation,
+                #                                  df=self.QuarticEquationDerivative, args=(Gamma,omega) , x0=0.95+0j)
+                solution = root_scalar(f=self.NonlinearEquation, method='newton', args=(Gamma,epsilon, omega),
+                                        fprime=self.NonlinearEquationDerivative, x0=omega_0, maxiter=2000, xtol=1e-8)
+
+
+                complete_solution[i][j] = solution.root
+        self.PF.PlotRootOfEquationEps(-1j * complete_solution * 2 * self.t_value,
+                                      self.omegavalues, self.epsilon)
         return complete_solution
 
-    # Complete values of root for every values of omega
+
+
+
 
 
 
@@ -164,7 +170,7 @@ class MakeIterationProcessforGamma:
     def GenerateSolution(self, Gamma):
         values=self.GiveSolutionofNonlinear(Gamma)
         #print('omega, roots',(self.omegavalues,values))
-        self.PF.PlotRootOfEquation(-1j * values * 2 * self.t_value, self.omegavalues)
+        #self.PF.PlotRootOfEquation(-1j * values * 2 * self.t_value, self.omegavalues)
         return -1j * values * 2 * self.t_value
 
     # Here is a function to plotting every parameter of this Iteration Process
@@ -230,6 +236,11 @@ class MakeIterationProcessforGamma:
             return False
 
     # This function Gives  Green function
+    def GenerateSolutionEpsilon(self, ):
+        Solution= self.GiveSolutionofNonlinearEps((-1e-13))
+
+
+
     def GiveFinalG(self):
         D_approx= np.empty(len(self.Gamma_values))
         Y_approx= np.empty(len(self.Gamma_values))

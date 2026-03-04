@@ -28,7 +28,6 @@ class MakeFunctions_Gamma:
         return (1 / (denom * (-x + Sigma))).real
 
     # ================= D RATIOS =================
-
     def FirstDRatio(self, x, Sigma):
         return 2 * self.ComplexFrac_in_Y(x, Sigma)
 

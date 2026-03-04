@@ -152,7 +152,6 @@ class PlottigFunctions:
         nazev = 'Self-Energy for every root of quartic equation'
         fig, axes = plt.subplots(2, 2, figsize=(10, 12), sharex=True)
         axes = axes.flatten()  # převede [ [a,b], [c,d] ] -> [a,b,c,d]
-
         for i in range(len(roots)):
             axes[i].scatter(omega, roots[i].real, label=f"{i}-th Root (Re)")
             axes[i].scatter(omega, roots[i].imag, label=f"{i}-th Root (Im)")
@@ -161,7 +160,6 @@ class PlottigFunctions:
             axes[i].set_title(f'{i}-th Root of Equation')
             axes[i].legend()
             axes[i].grid(True)
-
         fig.suptitle(nazev)
         plt.tight_layout(rect=[0, 0, 1, 0.96])  # aby nebyl překryt hlavní titulek
         plt.savefig(nazev + '_subplots.png', dpi=300)
@@ -206,9 +204,26 @@ class PlottigFunctions:
     # quartic equation solved by nonlinear method
     def PlotRootOfEquation(self, root, omega):
         nazev = 'Self-Energy for root of nonlinear equation'
-        plt.figure( figsize=(10, 12))
+        plt.figure( figsize=(10, 10))
         plt.scatter(omega, root.real, label=f" Root (Re)")
         plt.scatter(omega, root.imag, label=f" Root (Im)")
+        plt.xlabel('ω')
+        plt.ylabel('Σ(ω)')
+        plt.title(f'Root of Equation')
+        plt.legend()
+        plt.grid(True)
+        plt.title(nazev)
+        #plt.tight_layout(rect=[0, 0, 1, 0.96])  # aby nebyl překryt hlavní titulek
+
+        plt.savefig(nazev + '_subplots.png', dpi=300)
+        plt.show()
+
+    def PlotRootOfEquationEps(self, root, omega, epsilon):
+        nazev = 'Self-Energy for root of nonlinear equation for epsilon'
+        plt.figure( figsize=(10, 12))
+        for i , epsilon in enumerate(epsilon):
+            plt.scatter(omega, root[i].real, label=f" Root (Re)-epsilon-{epsilon}")
+            plt.scatter(omega, root[i].imag, label=f" Root (Im)-epsilon-{epsilon}")
         plt.xlabel('ω')
         plt.ylabel('Σ(ω)')
         plt.title(f'Root of Equation')
