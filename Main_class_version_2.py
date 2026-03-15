@@ -29,7 +29,8 @@ File_dir= 'Files'
 # Simulation parameters
 t = 1.0  #Hopping parameter
 U = -2.0 # Culoumb Interaction
-beta = (30*1/(np.abs(ZerothIterationofSelfEnergy(U,t))))#Inverse Temperature
+beta_element= 1/(np.abs(ZerothIterationofSelfEnergy(U,t)))
+beta = np.array([30,100,300 ,1000, 3000, 1e4 ,1e5,1e6,1e7,1e8])*beta_element
 
 ScaleFactor=1.5
 while True:
@@ -41,7 +42,7 @@ while True:
 
             x_values= np.linspace(-(Gamma_0(U,t)/(2*t))*ScaleFactor, (Gamma_0(U,t)/(2*t))*ScaleFactor, Rezolution)
             #x_values = np.linspace(-0.5,0.5, Rezolution)
-            omega_values= np.linspace(1.9,2.1
+            omega_values= np.linspace(-10,10
                             , Rezolution)
             NumIteration= 100
             Tolerance= 1e-12
@@ -52,8 +53,8 @@ while True:
             IP= MakeIterationProcessforGamma(beta,x_values, t,omega_values, U, NumIteration,
                                       Tolerance, Rezolution,
                                       Gamma_0(U,t),ZerothIterationofSelfEnergy(U,t))
-            #IP.GiveFinalG()
-            IP.GenerateSolutionEpsilon()
+            IP.GiveFinalG()
+            #IP.GenerateSolutionEpsilon()
             break
         else:
             print("Rezolution must be positive.")

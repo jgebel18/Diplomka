@@ -2,7 +2,8 @@ import numpy as np
 import scipy.integrate as integrate
 from numpy.lib.scimath import sqrt as csqrt
 from PlotingFunctions import PlottigFunctions
-
+from scipy.interpolate import PchipInterpolator
+from Nonlinear_Equation_Gamma_Solver import Nonlinear_Equation_Solver
 class MakeFunctions_Gamma:
 
     def __init__(self, beta, x_values, t_value, omega_values, U):
@@ -14,11 +15,38 @@ class MakeFunctions_Gamma:
         self.PF = PlottigFunctions()
         self.D_Iterations = []
         self.Y_Iterations = []
+        self.Nonlinear_Solver = Nonlinear_Equation_Solver(self.t_value, self.omega_values)
+
+
+
+
 
     # ================= BASIC FUNCTIONS =================
 
+
     def FermiFunction(self, x):
         return 1 / (np.exp(self.beta * x) + 1)
+
+#This function call functions from scipy.Interpolate and interpolate
+    # both parts of calculated values of self-energy
+    def Sigma_Interpolation(self, Sigma_values):
+        Sigma_komplex_inter= PchipInterpolator(self.omega_values,
+                                               Sigma_values.imag,)
+        Sigma_real_inter= PchipInterpolator(self.omega_values,
+                                            Sigma_values.real)
+        Sigma= lambda x: Sigma_real_inter(x)+1j*Sigma_komplex_inter(x)
+        return Sigma
+
+#This function call Nonlinear-equation-Solver and find values of Sigma
+    def Sigma(self, Gamma):
+        values=self.Nonlinear_Solver.GiveSolutionofNonlinear(Gamma)
+        #print('omega, roots',(self.omegavalues,values))
+        #self.PF.PlotRootOfEquation(-1j * values * 2 * self.t_value, self.omega_values)
+        Sigma_values=-1j * values * 2 * self.t_value
+        Sigma= self.Sigma_Interpolation(Sigma_values)
+        return Sigma
+
+
 
     def ComplexFrac_in_Y(self, x, Sigma):
         if np.ndim(Sigma) != 0:
@@ -35,7 +63,8 @@ class MakeFunctions_Gamma:
         denom = csqrt(4 * self.t_value**2 - (-(x) + Sigma)**2)**3
         return -2 * ((x - Sigma) / denom).real
 
-    def ThirdDRation(self, x, Sigma):
+    def ThirdDRation(self, x,Sigma):
+
         fp = (-x + Sigma)
         denom = (fp * csqrt(4 * self.t_value**2 - (-(x) + Sigma)**2))**3
         frac = (8 * self.t_value**2 - 3 * fp**2) / denom
@@ -50,22 +79,24 @@ class MakeFunctions_Gamma:
 
     # ================= INTEGRALS (SCALAR ONLY) =================
 
-
-
-    def D(self, Sigma):
+# for saving the calculation time I modified Integration function into one
+    def Integrator(self, Gamma , function):
+        Sigma= self.Sigma(Gamma)
         def integrand(x):
-            sig = Sigma(float(x)).item()
-            return (1 / np.pi) * self.FermiFunction(x) * self.SumOfComplexRations(x, sig)
-
-        result, error = integrate.quad_vec(integrand, -np.inf, np.inf)
+            sig=Sigma(float(x)).item()
+            integrand= (1/np.pi)*self.FermiFunction(x)*function(x,sig)
+            return integrand
+        result,_= integrate.quad_vec(integrand, -np.inf, np.inf, )
         return result
 
-    def Y(self, Sigma):
-        def integrand(x):
-            sig = Sigma(float(x)).item()
-            return (1 / np.pi) * self.FermiFunction(x) * self.ComplexFrac_in_Y(x, sig)
+# These funct are working only as the caller the
+    # current  function integral
+    def D(self, Gamma):
+        result = self.Integrator(Gamma,self.SumOfComplexRations)
+        return result
 
-        result, error = integrate.quad_vec(integrand, -np.inf, np.inf)
+    def Y(self, Gamma):
+        result=self.Integrator(Gamma, self.ComplexFrac_in_Y)
         return result
 
     def Y_approx(self, Gamma):
@@ -82,14 +113,10 @@ class MakeFunctions_Gamma:
         result = const_in_front * (first_term - second_term)
         return result * Gamma ** 2
 
-
-     #   return()
-
-
-
     # ================= ITERATION DATA =================
 
-    def D_Integrand(self, Sigma):
+    def D_Integrand(self, Gamma):
+        Sigma=self.Sigma(Gamma)
         values = np.zeros_like(self.x_values, dtype=complex)
         for i, x in enumerate(self.x_values):
             sig = Sigma(float(x)).item()
@@ -97,7 +124,8 @@ class MakeFunctions_Gamma:
 
         self.D_Iterations.append(values)
 
-    def Y_Integrand(self, Sigma):
+    def Y_Integrand(self, Gamma):
+        Sigma = self.Sigma(Gamma)
         values = np.zeros_like(self.x_values, dtype=complex)
         for i, x in enumerate(self.x_values):
             sig = Sigma((x)).item()

@@ -271,3 +271,26 @@ class PlottigFunctions:
         plt.title(f'Values of Y and D for beta={beta}')
         plt.savefig(nazev)
         plt.show()
+
+#Iadded this funtion for plotting the every termo of sloving equations
+    # for different beta and gamma values in one picture and 4 subplots
+    def Plot_Beta_Gamma_Dependence(self, Variables,
+                                   beta_value, Gamma_Values):
+
+        Axes_y = np.array(['Y(Γ)', 'D(Γ)', 'a(Γ)', 'Γ(Γ)'])
+        Axes_x = 'Γ'
+        Nazev = f'Values_of_all_important_terms_in_equations_for_different_Gamma'
+        fig, axes = plt.subplots(2, 2, figsize=(10, 10))
+        axes = axes.flatten()
+        for i in range(Axes_y.size):
+            for j, beta in enumerate(beta_value):
+                axes[i].plot(Gamma_Values, Variables[i][j], label=f'beta-{beta}')
+            axes[i].set_xlabel(Axes_x)
+            axes[i].set_ylabel(Axes_y[i])
+            axes[i].legend()
+            axes[i].grid(True)
+            axes[i].set_title(f'{Axes_y[i]}-Values for different Gamma and beta')
+        fig.tight_layout(rect=[0, 0, 1, 0.95])
+        # plt.title('Gamma and Beta dependeces for every important terms in solving equations')
+        plt.savefig(os.path.join('Images', Nazev + '.png'))
+        plt.show()

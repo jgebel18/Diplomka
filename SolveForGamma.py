@@ -3,7 +3,6 @@ from MakeFunctions import MakeFunctions
 from scipy.interpolate import UnivariateSpline
 from scipy.optimize import newton
 from scipy.optimize import root
-
 from scipy.optimize import root_scalar
 from numpy.lib.scimath import sqrt as csqrt
 from scipy.interpolate import PchipInterpolator
@@ -11,7 +10,6 @@ from PlotingFunctions import PlottigFunctions
 from MakeFunction_Gamma import MakeFunctions_Gamma
 from Class_for_testing_calculations import TestingCalculations
 class MakeIterationProcessforGamma:
-
   #Here is a construction of class variables
     def __init__(self, beta, x_values, t_value, omega_values, U,
                  NumIterations, Tolerance, Rezolution,Gamma_0, Sigma_0):
@@ -20,142 +18,53 @@ class MakeIterationProcessforGamma:
         self.t_value = t_value #Hopping parameter
         self.omegavalues=omega_values #omega for Greeen function                # Hopping parameter
         self.U = U   #Electron Iteraction
-        self.Mkf= MakeFunctions_Gamma(self.beta, self.x_values, self.t_value, self.omegavalues,self.U) # This calling of class is important for define another iterations
+         # This calling of class is important for define another iterations
         self.NumIteration=NumIterations #Num Iterations
         self.Rezolution=Rezolution #Rezolution
         self.Tolerance=Tolerance #Tolerance
         self.PF=PlottigFunctions() # Calling of class with plotiing methods
         self.Gamma_0=0
         self.step= 0.01
-        self.epsilon= np.array([1e-3, 1e-4,1e-5, 1e-6, 1e-7, 1e-8])
         self.num_steps=100
         self.Path_Files='Files'
         self.Path_Images='Images'
         self.Sigma_0=Sigma_0
         self.Gamma_values=np.linspace(self.Gamma_0-self.num_steps*self.step, self.Gamma_0, self.num_steps+1)
         #self.Gamma_values_right= np.linspace(self.Gamma_0, self.Gamma_0+self.num_steps*self.step, self.num_steps+1)
-        #np.unique(np.concatenate((self.Gamma_values_left,
-                            #                         self.Gamma_values_right)))
+        #np.unique(np.concatenate((self.Gamma_values_left,                    #                         self.Gamma_values_right)))
         self.TestingClass = TestingCalculations(self.beta, self.x_values, self.t_value, self.omegavalues, self.U,
                                                 self.NumIteration, self.Tolerance,
                                                 self.Rezolution, self.Gamma_0,
                                                 self.Sigma_0)
-        self.Gamma=self.Gamma_0
+
 
         self.D2_values_Sigma= None
 
 
         # This is a First equation for a
-    def a(self, Sigma):
+    def a(self, Gamma, Mkf):
         # print(self.Mkf.Y(Sigma))
-        a = 1.0 + self.U * self.Mkf.Y(Sigma)
-        print(a)
+        a = 1.0 + self.U * Mkf.Y(Gamma)
+        #print(a)
         return a
 
-    # Another Iterations of Gamma
-    def Gamma(self, Sigma):
-        DotofItegrals = csqrt(2 / (self.Mkf.D(Sigma) * self.U))
-        Gamma = (self.U / (self.beta * np.pi)) * DotofItegrals * (1 / csqrt(self.a(Sigma)))
+    # especially modified function for D in
+  # dependence of one a and D
+    def Gamma_function_a_D(self, beta, D, a):
+
+        DotofItegrals = csqrt(2 / (D * self.U))
+        Gamma_function = (self.U / (beta * np.pi)) * DotofItegrals * (1 / csqrt(a))
         # self.TestingClass.CheckDominantTerminD()
         # self.Mkf.CollectDataAndPlot()
-        return Gamma
+        return Gamma_function
 
-    # little Gamma
-    def gamma(self, Gamma):
-        value = -Gamma / (2 * self.t_value) ** 2
-        # print(value)
-        return value
-
-    # W-coeficent in the dependence of omega
-    def W(self, omega):
-        return omega / (2 * self.t_value)
-
-    # Quartic equation
-    def QuarticEquation(self, s, Gamma, omega):
-        equation = s ** 4 - 2j * self.W(omega) * s ** 3 + (1 - self.W(omega) ** 2) * s ** 2 - self.gamma(Gamma) ** 2
-        return equation
-
-    # Quartic equation derivative
-    def QuarticEquationDerivative(self, s, Gamma, omega):
-        equation = 4 * s ** 3 - 6j * self.W(omega) * s ** 2 + 2 * (1 - self.W(omega) ** 2) * s
-        return equation
-
-
-    def QuarticEquation2ndDerivative(self, s, Gamma, omega):
-        equation = 12 * s ** 2 - 12j * self.W(omega) * s  + 2 * (1 - self.W(omega) ** 2)
-        return equation
-
-
-    def NonlinearEquation(self, s, Gamma,eps, omega):
-        W=self.W(omega) + eps* 1j
-        numerator = self.gamma(Gamma)
-        denominator = np.sqrt(1 + (s - (W) * 1j) ** 2)
-        return s - numerator / denominator
-
-
-    def NonlinearEquationDerivative(self, s, Gamma, eps, omega):
-        W=(self.W(omega) + eps * 1j)
-        numerator = -self.gamma(Gamma) * (s - 1j * W)
-        denominator = (1 + (s - (W) * 1j) ** 2) ** (3/2)
-        # denominator= (csqrt(1+(s-self.W(omega)*1j)**2)*csqrt(1+(s-self.W(omega)*1j)**2)
-        #             *csqrt(1+(s-self.W(omega)*1j)**2))
-        return (1 - numerator / denominator)
-
-
-
-
-
-    # Phi function for simple iteration method
-    def QuarticFunctionPhi(self, s, Gamma, omega):
-        numerator = (self.gamma(Gamma) ** 2)
-        denom = (s ** 3 - 2j * self.W(omega) * s ** 2 + (1 - self.W(omega) ** 2) * s)
-        return numerator / denom
-
-    # Nonlinear equation solver
-
-
-    def GiveSolutionofNonlinear(self, Gamma, ):
-        complete_solution = np.empty(len(self.omegavalues), dtype=complex)
-        omega_0 = 1.0+1.0*1j
-        for i, omega in enumerate(self.omegavalues):
-
-            # solution = nonlin_equations.newton(f= self.QuarticEquation,
-            #                                  df=self.QuarticEquationDerivative, args=(Gamma,omega) , x0=0.95+0j)
-            solution = root_scalar(f=self.NonlinearEquation, method='newton', args=(Gamma, omega),
-                                    fprime=self.NonlinearEquationDerivative, x0=omega_0, maxiter=1000)
-
-
-
-            complete_solution[i] = solution.root
-
-        return complete_solution
-
-
-    def GiveSolutionofNonlinearEps(self, Gamma, ):
-        complete_solution = np.empty(( self.epsilon.size, self.omegavalues.size), dtype=complex)
-        omega_0 = self.omegavalues[0]
-        for i, epsilon  in enumerate(self.epsilon):
-            for j, omega in enumerate(self.omegavalues):
-
-
-                # solution = nonlin_equations.newton(f= self.QuarticEquation,
-                #                                  df=self.QuarticEquationDerivative, args=(Gamma,omega) , x0=0.95+0j)
-                solution = root_scalar(f=self.NonlinearEquation, method='newton', args=(Gamma,epsilon, omega),
-                                        fprime=self.NonlinearEquationDerivative, x0=omega_0, maxiter=2000, xtol=1e-8)
-
-
-                complete_solution[i][j] = solution.root
-        self.PF.PlotRootOfEquationEps(-1j * complete_solution * 2 * self.t_value,
-                                      self.omegavalues, self.epsilon)
-        return complete_solution
-
-
-
-
-
-
-
-
+    # Another Iterations of Gamma
+    def Gamma_function(self, Gamma, beta, Mkf):
+        DotofItegrals = csqrt(2 / (Mkf.D(Gamma) * self.U))
+        Gamma_function = (self.U / (beta * np.pi)) * DotofItegrals * (1 / csqrt(self.a(Gamma, Mkf)))
+        # self.TestingClass.CheckDominantTerminD()
+        # self.Mkf.CollectDataAndPlot()
+        return Gamma_function
     # Trhis function return zero omega cese which is more comfortable to solve analithicaly
     def ZeroOmegaCase(self, Gamma):
         values_real_1, values_real_2 = (+csqrt(-0.5 + csqrt((Gamma / (2 * self.t_value) ** 2) ** 2 + 0.25)),
@@ -166,12 +75,7 @@ class MakeIterationProcessforGamma:
         return np.array([values_real_1, values_real_2, values_imag_1, values_imag_2])
 
 
-    # This function generate the solution of both equation
-    def GenerateSolution(self, Gamma):
-        values=self.GiveSolutionofNonlinear(Gamma)
-        #print('omega, roots',(self.omegavalues,values))
-        #self.PF.PlotRootOfEquation(-1j * values * 2 * self.t_value, self.omegavalues)
-        return -1j * values * 2 * self.t_value
+
 
     # Here is a function to plotting every parameter of this Iteration Process
     def PrintEveryParameter(self, i, Sigma):
@@ -184,6 +88,13 @@ class MakeIterationProcessforGamma:
             Y = {self.Mkf.Y(Sigma)}	
             Σ_{0} = {self.Sigma_0}
             Γ_{0} = {self.Gamma_0}""")
+
+
+
+
+
+
+
 
     # Main Iteration Process I have upgraded and I added an array to collect values in every different iteration
     def Iterationprocess(self):
@@ -212,14 +123,7 @@ class MakeIterationProcessforGamma:
     # I will probably change it
 
     # Sunil Here is the key method which is in the middle of our interest
-    def InterpolateOfSigmaValues(self, SigmaValues, OmegaValues, ):
-        # Interpolace reálné a imaginární části zvlášť
-        SplineOmegaImag = PchipInterpolator(OmegaValues,
-                                            SigmaValues.imag)  # UnivariateSpline(OmegaValues, np.imag(SigmaValues), s=0)
-        SplineOmegaReal = PchipInterpolator(OmegaValues,
-                                            SigmaValues.real)  # UnivariateSpline(OmegaValues, np.real(SigmaValues), s=0)
-        SplineOmega = lambda x: SplineOmegaReal(x) + 1j * SplineOmegaImag(x)
-        return SplineOmega
+
 
     # Here is a method checking for continue of comparing diff betwen actual and past iteration of Sigma
     # We have a sorted caseses for imag part and real part
@@ -235,27 +139,26 @@ class MakeIterationProcessforGamma:
         else:
             return False
 
-    # This function Gives  Green function
-    def GenerateSolutionEpsilon(self, ):
-        Solution= self.GiveSolutionofNonlinearEps((-1e-13))
 
 
 
+# I modified this function to gives 3D numpy.array for every important termi in solved equations
+  #
     def GiveFinalG(self):
-        D_approx= np.empty(len(self.Gamma_values))
-        Y_approx= np.empty(len(self.Gamma_values))
-        D_values = np.empty(len(self.Gamma_values))
-        Y_values = np.empty(len(self.Gamma_values))
-        for i, Gamma in enumerate(self.Gamma_values):
-            Sigma= self.GenerateSolution(Gamma)
-            Sigma_aprox=self.InterpolateOfSigmaValues(Sigma, self.omegavalues)
-            Y_values[i]=self.Mkf.Y(Sigma_aprox)
-            D_values[i]= self.Mkf.D(Sigma_aprox)
-            D_approx[i] = self.Mkf.D_approx(Gamma)
-            Y_approx[i]=self.Mkf.Y_approx(Gamma)
-
-        self.PF.Plot_Values_of_a_and_D(Y_values, D_values,Y_approx,D_approx,
-                                       self.Gamma_values, self.beta)
+            # Inicializace jednoho 3D pole: (4 metriky, počet_beta, počet_gamma)
+        res = np.empty((4, self.beta.size, self.Gamma_values.size))
+        for i, beta in enumerate(self.beta):
+            mkf = MakeFunctions_Gamma(beta, self.x_values, self.t_value, self.omegavalues, self.U)
+            for j, gamma in enumerate(self.Gamma_values):
+                res[0, i, j] = mkf.Y(gamma)
+                res[1, i, j] = mkf.D(gamma)
+                # This is for saving the calculation times I decide to calculate Y
+                # and D once I also created special functions in this class
+                res[2, i, j] = 1+self.U*res[0, i, j]#self.Gamma_function(gamma, beta, mkf)
+                res[3, i, j] = self.Gamma_function_a_D(beta, res[1, i, j] ,res[2, i, j] )
+        self.PF.Plot_Beta_Gamma_Dependence(res, self.beta, self.Gamma_values)
+        #self.PF.Plot_Values_of_a_and_D(Y_values, D_values,Y_approx,D_approx,
+        #                               self.Gamma_values, self.beta)
 
 
         #SigmaValues, SigmaIterations = self.Iterationprocess()
