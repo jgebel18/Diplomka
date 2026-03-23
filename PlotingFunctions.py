@@ -277,7 +277,7 @@ class PlottigFunctions:
     def Plot_Beta_Gamma_Dependence(self, Variables,
                                    beta_value, Gamma_Values):
 
-        Axes_y = np.array(['Y(Γ)', 'D(Γ)', 'a(Γ)', 'Γ(Γ)'])
+        Axes_y = np.array(['Y(Γ)', 'D(Γ)*Γ^2', 'a(Γ)', 'Γ(Γ)'])
         Axes_x = 'Γ'
         Nazev = f'Values_of_all_important_terms_in_equations_for_different_Gamma'
         fig, axes = plt.subplots(2, 2, figsize=(10, 10))

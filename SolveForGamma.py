@@ -151,11 +151,11 @@ class MakeIterationProcessforGamma:
             mkf = MakeFunctions_Gamma(beta, self.x_values, self.t_value, self.omegavalues, self.U)
             for j, gamma in enumerate(self.Gamma_values):
                 res[0, i, j] = mkf.Y(gamma)
-                res[1, i, j] = mkf.D(gamma)
+                res[1, i, j] = mkf.D(gamma)*gamma**2
                 # This is for saving the calculation times I decide to calculate Y
                 # and D once I also created special functions in this class
                 res[2, i, j] = 1+self.U*res[0, i, j]#self.Gamma_function(gamma, beta, mkf)
-                res[3, i, j] = self.Gamma_function_a_D(beta, res[1, i, j] ,res[2, i, j] )
+                res[3, i, j] = self.Gamma_function_a_D(beta, res[1, i, j]/gamma**2 ,res[2, i, j] )
         self.PF.Plot_Beta_Gamma_Dependence(res, self.beta, self.Gamma_values)
         #self.PF.Plot_Values_of_a_and_D(Y_values, D_values,Y_approx,D_approx,
         #                               self.Gamma_values, self.beta)
