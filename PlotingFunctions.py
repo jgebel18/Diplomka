@@ -277,14 +277,14 @@ class PlottigFunctions:
     def Plot_Beta_Gamma_Dependence(self, Variables,
                                    beta_value, Gamma_Values):
 
-        Axes_y = np.array(['Y(Γ)', 'D(Γ)*Γ^2', 'a(Γ)', 'Γ(Γ)'])
+        Axes_y = np.array(['Y(Γ)', 'D(Γ)*Γ^2', 'a(Γ)', 'f(Γ)-Nonlinear'])
         Axes_x = 'Γ'
-        Nazev = f'Values_of_all_important_terms_in_equations_for_different_Gamma'
+        Nazev = f'Values_of_all_important_terms_in_equations_for_different_Gamma_plus_Nonlinear'
         fig, axes = plt.subplots(2, 2, figsize=(10, 10))
         axes = axes.flatten()
         for i in range(Axes_y.size):
             for j, beta in enumerate(beta_value):
-                axes[i].plot(Gamma_Values, Variables[i][j], label=f'beta-{beta}')
+                axes[i].scatter(Gamma_Values, Variables[i][j], marker='v',label=f'beta-{beta}')
             axes[i].set_xlabel(Axes_x)
             axes[i].set_ylabel(Axes_y[i])
             axes[i].legend()
@@ -293,4 +293,13 @@ class PlottigFunctions:
         fig.tight_layout(rect=[0, 0, 1, 0.95])
         # plt.title('Gamma and Beta dependeces for every important terms in solving equations')
         plt.savefig(os.path.join('Images', Nazev + '.png'))
+        plt.show()
+
+    def PlotGammaNonlinear(self, function, GammaValues, beta):
+
+        plt.figure(figsize=(10, 10))
+        plt.plot(GammaValues, function)
+        plt.xlabel('Γ')
+        plt.ylabel('f(Γ)')
+        plt.savefig(f'Gamma_NonlinearEQ-{beta}')
         plt.show()

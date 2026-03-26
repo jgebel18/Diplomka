@@ -12,6 +12,9 @@ class Nonlinear_Equation_Solver:
         self.omega_values= omegavalues
 
 
+
+
+
 #These functions are definig the key terms in nonlinear equation
     def gamma(self, Gamma):
         value = -Gamma / (2 * self.t_value) ** 2

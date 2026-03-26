@@ -7,6 +7,7 @@ from scipy.optimize import root_scalar
 from numpy.lib.scimath import sqrt as csqrt
 from scipy.interpolate import PchipInterpolator
 from PlotingFunctions import PlottigFunctions
+from Nonlinear_Equation_Gamma_Solver import Nonlinear_Equation_Solver
 from MakeFunction_Gamma import MakeFunctions_Gamma
 from Class_for_testing_calculations import TestingCalculations
 class MakeIterationProcessforGamma:
@@ -29,7 +30,7 @@ class MakeIterationProcessforGamma:
         self.Path_Files='Files'
         self.Path_Images='Images'
         self.Sigma_0=Sigma_0
-        self.Gamma_values=np.linspace(self.Gamma_0-self.num_steps*self.step, self.Gamma_0, self.num_steps+1)
+        self.Gamma_values=np.linspace(-0.5, -0.3, self.num_steps+1)
         #self.Gamma_values_right= np.linspace(self.Gamma_0, self.Gamma_0+self.num_steps*self.step, self.num_steps+1)
         #np.unique(np.concatenate((self.Gamma_values_left,                    #                         self.Gamma_values_right)))
         self.TestingClass = TestingCalculations(self.beta, self.x_values, self.t_value, self.omegavalues, self.U,
@@ -57,6 +58,11 @@ class MakeIterationProcessforGamma:
         # self.TestingClass.CheckDominantTerminD()
         # self.Mkf.CollectDataAndPlot()
         return Gamma_function
+
+    def GammaNonlinearFunction(self, Gamma, beta, Mkf):
+        Gamma_function= self.Gamma_function(Gamma, beta, Mkf)
+        return Gamma-Gamma_function
+
 
     # Another Iterations of Gamma
     def Gamma_function(self, Gamma, beta, Mkf):
@@ -162,8 +168,18 @@ class MakeIterationProcessforGamma:
 
 
         #SigmaValues, SigmaIterations = self.Iterationprocess()
-        # Sigma= self.InterpolateOfSigmaValues( SigmaValues,self.omegavalues)
+        # Sigma= self.InterpolateOfSiValues( SigmaValues,self.omegavalues)
         # self.TestingClass.CheckLeftSideIntegrand()
         # self.TestingClass.CheckDominantTerminD()
         # self.PF.PlotSigmaFunction(self.omegavalues, SigmaIterations)
-        # self.PF.PlotGreenFunction(self.omegavalues, self.Mkf.G,  SigmaIterations,SigmaIterations.size)
+        # self.PF.PlotGreenFunction(selfgma.omegavalues, self.Mkf.G,  SigmaIterations,SigmaIterations.size)
+    def SolveFinalEquation(self):
+        solutions= np.empty((self.beta.size), )
+        a,b=self.Gamma_values[0], self.Gamma_values[-1]
+        for i, beta in enumerate(self.beta):
+            mkf=MakeFunctions_Gamma(beta, self.x_values, self.t_value, self.omegavalues, self.U)
+            self.PF.PlotGammaNonlinear(self.Gamma_values, self.GammaNonlinearFunction(self.Gamma_values,beta,mkf),beta)
+            solution = root_scalar(f=self.GammaNonlinearFunction,args=(beta, mkf), method='brenth',maxiter=1000, xtol=1e-3, bracket=(a,b))
+            solutions[i]=solution.root
+            print(solutions[i])
+        return solutions
