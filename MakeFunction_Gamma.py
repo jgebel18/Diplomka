@@ -18,12 +18,7 @@ class MakeFunctions_Gamma:
         self.Nonlinear_Solver = Nonlinear_Equation_Solver(self.t_value, self.omega_values)
 
 
-
-
-
     # ================= BASIC FUNCTIONS =================
-
-
     def FermiFunction(self, x):
         return 1 / (np.exp(self.beta * x) + 1)
 

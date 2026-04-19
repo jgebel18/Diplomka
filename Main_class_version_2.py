@@ -28,18 +28,18 @@ Image_dir= 'Images'
 File_dir= 'Files'
 # Simulation parameters
 t = 1.0  #Hopping parameter
-U = -2.0 # Culoumb Interaction
+U = -7.0 #np.array([0.5, 0.75, 1.0, 1.5, 2.0,2.5,3.0,4.0,5.0,6.0,7.0,8.0,9.0]) Culoumb Interaction
 beta_element= 1/(np.abs(ZerothIterationofSelfEnergy(U,t)))
 beta = np.array([30,100,300 ,1000, 3000, 1e4 ,1e5,1e6,1e7,1e8])*beta_element
 
 ScaleFactor=1.5
 while True:
-    try:
+    #try: #For better orentation and speciation i comented this exptions to find the
+    # main source of the mistakes behind the writing "Wrong Value Try it again."
 
         Rezolution= int(input("Suggest the"
                               " Rezolution:")) # Rezolution Sunils suggest Exeption for the future
         if Rezolution>=0:
-
             x_values= np.linspace(-(Gamma_0(U,t)/(2*t))*ScaleFactor, (Gamma_0(U,t)/(2*t))*ScaleFactor, Rezolution)
             #x_values = np.linspace(-0.5,0.5, Rezolution)
             omega_values= np.linspace(-10,10
@@ -53,10 +53,13 @@ while True:
             IP= MakeIterationProcessforGamma(beta,x_values, t,omega_values, U, NumIteration,
                                       Tolerance, Rezolution,
                                       Gamma_0(U,t),ZerothIterationofSelfEnergy(U,t))
-            IP.GiveFinalG()
-            #IP.GenerateSolutionEpsilon()
-            break
+            IP.SolveFinalEquation()
+            #IP.GiveFinalG()
+            #IP.Read_Data_and_plot()
+            #IP.GiveFinalG()
+            #IP.AnalyzeTheSolution_write()
+            #IP.AnalyzeTheSolution_read()
         else:
             print("Rezolution must be positive.")
-    except ValueError:
-        print("Wrong Value Try it again.")
+    #except ValueError:
+    #    print("Wrong Value Try it again.")

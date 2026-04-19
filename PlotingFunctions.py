@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 import numpy as np
 matplotlib.use("TkAgg")
+
 import os
 #Dear Sunil,
 #I created this class because we had too many scattered plotting functions, so I decided to centralize them.
@@ -272,34 +273,103 @@ class PlottigFunctions:
         plt.savefig(nazev)
         plt.show()
 
-#Iadded this funtion for plotting the every termo of sloving equations
-    # for different beta and gamma values in one picture and 4 subplots
-    def Plot_Beta_Gamma_Dependence(self, Variables,
-                                   beta_value, Gamma_Values):
+#I added this funtion for plotting the every termo of sloving equations
+    # for different beta and gamma values in one picture and 4 subplots,
+    # this method have also two extensions extension into latex and extension into add and plot limits of intervals
 
-        Axes_y = np.array(['Y(Γ)', 'D(Γ)*Γ^2', 'a(Γ)', 'f(Γ)-Nonlinear'])
-        Axes_x = 'Γ'
-        Nazev = f'Values_of_all_important_terms_in_equations_for_different_Gamma_plus_Nonlinear'
-        fig, axes = plt.subplots(2, 2, figsize=(10, 10))
+    def Plot_Beta_Gamma_Dependence(self, Variables, beta_value, Gamma_Values):  # , limits_values):
+        Axes_y = np.array([r'$Y(\Gamma)$', r'$D(\Gamma)*\Gamma^2$', r'$a(\Gamma)$', r'$a_{Nonlinear}(\Gamma)$'])
+        Names = self.TeXEquations()
+        Axes_x = r'$\Gamma$'
+        Nazev = 'Values_of_all_important_terms_in_equations_for_different_Gamma_U_1e4'
+        plt.rcParams['text.usetex'] = True
+
+        # Slightly reduced height (20x12) so the plots are not excessively stretched
+        fig, axes = plt.subplots(2, 2, figsize=(20, 12))
         axes = axes.flatten()
+
+        # OPTIMIZATION: Unpack limits_values only once before the loops
+        # limits_unpacked = np.vsplit(limits_values, limits_values.T[0].size)
         for i in range(Axes_y.size):
             for j, beta in enumerate(beta_value):
-                axes[i].scatter(Gamma_Values, Variables[i][j], marker='v',label=f'beta-{beta}')
+                # Added rounding (.2f), transparency (alpha), and smaller marker size (s)
+                axes[i].scatter(Gamma_Values, Variables[i][j], marker='v', s=20, alpha=0.7,
+                                label=rf'$\beta={beta:.2f}$')
+
+                # Pass the unpacked values here
+                # self.AddLimitsofIntervals(i, j, axes, limits_unpacked, beta)
+
             axes[i].set_xlabel(Axes_x)
             axes[i].set_ylabel(Axes_y[i])
-            axes[i].legend()
+
+            # Move the legend outside the plot area and reduce font size
+            axes[i].legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0., fontsize=9)
+
+            axes[i].text(0.6, 0.6, Names[i],
+                         fontsize=16,
+                         transform=axes[i].transAxes,
+                         verticalalignment='top',
+                         horizontalalignment='left')
             axes[i].grid(True)
-            axes[i].set_title(f'{Axes_y[i]}-Values for different Gamma and beta')
-        fig.tight_layout(rect=[0, 0, 1, 0.95])
-        # plt.title('Gamma and Beta dependeces for every important terms in solving equations')
-        plt.savefig(os.path.join('Images', Nazev + '.png'))
+            axes[i].set_title(rf'{Axes_y[i]} - Values for different Gamma and beta')
+
+        # Adjust layout to prevent overlap and ensure everything fits
+        fig.tight_layout()
+
+        # Save the plot (bbox_inches='tight' ensures the external legend is not clipped)
+        os.makedirs('Images', exist_ok=True)  # Safety check to ensure the directory exists
+        plt.savefig(os.path.join('Images', Nazev + '.png'), bbox_inches='tight', dpi=300)
         plt.show()
 
-    def PlotGammaNonlinear(self, function, GammaValues, beta):
 
-        plt.figure(figsize=(10, 10))
+#I also added this method for add limits of the intervals and with
+    # minimum corrections we will start to use it
+    def AddLimitsofIntervals(self, i, j, axes, limits_unpacked, beta):
+        (Key_a_x0, Key_a_x1, Key_a_x1_new,
+         Key_gamma_x0, Key_gamma_x1, Key_gamma_x1_new,
+         x0, x1, x1_new) = limits_unpacked
+
+        # Různé markery (o = kruh, s = čtverec, D = kosočtverec) a zaokrouhlení
+        if i == 2:
+            axes[i].scatter(x0.flatten()[j], Key_a_x0.flatten()[j], s=40, marker='o',
+                            label=rf'$x_0 (\beta={beta:.2f})$')
+            axes[i].scatter(x1.flatten()[j], Key_a_x1.flatten()[j], s=40, marker='s',
+                            label=rf'$x_1 (\beta={beta:.2f})$')
+            axes[i].scatter(x1_new.flatten()[j], Key_a_x1_new.flatten()[j], s=40, marker='D',
+                            label=rf'$x_2 (\beta={beta:.2f})$')
+        elif i == 3:
+            axes[i].scatter(x0.flatten()[j], Key_gamma_x0.flatten()[j], s=40, marker='o',
+                            label=rf'$x_0 (\beta={beta:.2f})$')
+            axes[i].scatter(x1.flatten()[j], Key_gamma_x1.flatten()[j], s=40, marker='s',
+                            label=rf'$x_1 (\beta={beta:.2f})$')
+            axes[i].scatter(x1_new.flatten()[j], Key_gamma_x1_new.flatten()[j], s=40, marker='D',
+                            label=rf'$x_2 (\beta={beta:.2f})$')
+
+
+
+
+    def PlotaNonlinear(self, function, GammaValues, beta):
+        plt.figure(figsize=(20, 20))
         plt.plot(GammaValues, function)
         plt.xlabel('Γ')
         plt.ylabel('f(Γ)')
         plt.savefig(f'Gamma_NonlinearEQ-{beta}')
         plt.show()
+
+    #This methods regards writing LateX commands into graphs
+    def TeXEquations(self):
+        Titles = np.array([
+            # Y(0,0)
+            r"$Y(0,0)=\int_{-\infty}^{+\infty} \frac{dx}{\pi} \cdots$",
+
+            # D
+            r"$D = \int_{-\infty}^{+\infty} \frac{dx}{\pi} \cdots$",
+
+            # a
+            r"$a=1+UY(0,0)$",
+
+            # Gamma - Corrected braces around {DU} and fractional nesting
+            r"$-1-UY(0,0)+\frac{U^2}{(\beta\pi)^{2}} \frac{2}{DU} \frac{1}{\Gamma^{2}}=0$"
+        ])
+
+        return Titles
