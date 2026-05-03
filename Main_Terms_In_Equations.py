@@ -15,7 +15,13 @@ class Main_Terms_Equations:
         self.Rezolution = Rezolution  # Rezolution
         self.Tolerance = Tolerance  # Tolerance
 
+    @staticmethod
+    def FermiFunction(x, beta):
+        # Místo 1 / (1 + np.exp(-z)) použijte toto:
 
+        result = 1 / (np.exp(beta * x) + 1)
+
+        return result
 
     # This is a First equation for a
     def a(self, Gamma, Mkf):
@@ -66,18 +72,16 @@ class Main_Terms_Equations:
               Σ_{0} = {self.Sigma_0}
               Γ_{0} = {self.Gamma_0}""")
 
-    def NonlinearEquationa(self, Gamma, beta , a, D):
+    def NonlinearEquationa(self, Gamma, beta, Y, D):
+        DotsOfIntegrals = 2 / (((np.pi * beta) ** 2) * D * Gamma ** 2)
 
-        DotsOfIntegrals= 2/(self.U*D)*(1/Gamma**2)
-        SecondTerm= (self.U/(np.pi*beta))**2
-        FinalEquation= SecondTerm*DotsOfIntegrals-a
+        FinalEquation = -(1 / self.U) -Y + DotsOfIntegrals
         return FinalEquation
 
-    def NonlinearEquationA(self, Gamma, beta , Mkf):
-        a= self.a(Gamma, Mkf)
-        DotsOfIntegrals= 2/(self.U*Mkf.D(Gamma))*(1/Gamma**2)
-        SecondTerm= (self.U/(np.pi*beta))**2
-        FinalEquation= SecondTerm*DotsOfIntegrals-a
+    def NonlinearEquationA(self, Gamma, beta, Mkf):
+        DotsOfIntegrals = 2 / (((np.pi * beta) ** 2) * Mkf.D(Gamma) * Gamma ** 2)
+        FinalEquation = -(1 / self.U) - Mkf.Y(Gamma) + DotsOfIntegrals
         return FinalEquation
+
 
 

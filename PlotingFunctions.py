@@ -1,6 +1,9 @@
 import matplotlib.pyplot as plt
 import matplotlib
 import numpy as np
+
+from Main_Terms_In_Equations import Main_Terms_Equations
+
 matplotlib.use("TkAgg")
 
 import os
@@ -215,7 +218,6 @@ class PlottigFunctions:
         plt.grid(True)
         plt.title(nazev)
         #plt.tight_layout(rect=[0, 0, 1, 0.96])  # aby nebyl překryt hlavní titulek
-
         plt.savefig(nazev + '_subplots.png', dpi=300)
         plt.show()
 
@@ -277,11 +279,11 @@ class PlottigFunctions:
     # for different beta and gamma values in one picture and 4 subplots,
     # this method have also two extensions extension into latex and extension into add and plot limits of intervals
 
-    def Plot_Beta_Gamma_Dependence(self, Variables, beta_value, Gamma_Values):  # , limits_values):
+    def Plot_Beta_Gamma_Dependence(self, Variables, beta_value, Gamma_Values,U):  # , limits_values):
         Axes_y = np.array([r'$Y(\Gamma)$', r'$D(\Gamma)*\Gamma^2$', r'$a(\Gamma)$', r'$a_{Nonlinear}(\Gamma)$'])
         Names = self.TeXEquations()
         Axes_x = r'$\Gamma$'
-        Nazev = 'Values_of_all_important_terms_in_equations_for_different_Gamma_U_1e4'
+        Nazev = f'Values_of_all_important_terms_in_equations_for_different_Gamma_U:{U}-Test'
         plt.rcParams['text.usetex'] = True
 
         # Slightly reduced height (20x12) so the plots are not excessively stretched
@@ -369,7 +371,49 @@ class PlottigFunctions:
             r"$a=1+UY(0,0)$",
 
             # Gamma - Corrected braces around {DU} and fractional nesting
-            r"$-1-UY(0,0)+\frac{U^2}{(\beta\pi)^{2}} \frac{2}{DU} \frac{1}{\Gamma^{2}}=0$"
+            r"$ -\frac{1}{U}-Y(0,0)+\frac{2}{\Gamma^{2}(\beta\pi)^{2} D}=0$"
         ])
 
         return Titles
+
+    #Function for plotting final solution of equation
+    def Plot_3D_solution(self, beta_values, U_values,  solution):
+        plt.rcParams['text.usetex']=True
+        fig = plt.figure(figsize=(12, 6))
+        ax1 = fig.add_subplot(121, projection='3d')  # 3D povrch
+        ax2 = fig.add_subplot(122)  # 2D kontury
+        # --- 3D plot ---
+        surf=ax1.plot_surface(beta_values, U_values, solution,
+                         cmap='viridis', alpha=0.8)
+        ax1.set_xlabel(rf'$\beta$')
+        ax1.set_ylabel(rf'$U$')
+        ax1.set_zlabel(rf'Solutions of nonlinear $a$')
+        ax1.view_init(elev=45, azim=45)
+        ax1.legend()
+
+        # --- 2D kontury ---
+        ax2.contour(beta_values, U_values, solution
+                    , levels=30, cmap='viridis')
+        ax2.set_xlabel(rf'$\beta$')
+        ax2.set_ylabel(rf'$U$')
+        ax2.legend()
+        # Add a color bar which maps values to colors.
+        fig.colorbar(surf, shrink=0.5, aspect=5)
+        plt.title('Hladiny funkce a průběh optimalizace pro obě metody')
+        plt.tight_layout()
+        plt.savefig(f'Solution-of-nonlinear-equation-for-beta-{beta_values.size}-U-{U_values.size}.png ')
+        plt.show()
+
+
+    def Plot_Fermi_function(self,x_values,
+                            beta_values, ):
+        plt.figure(figsize=(10,10))
+        for beta in beta_values:
+            function = lambda  x: Main_Terms_Equations.FermiFunction(x, beta)
+            plt.plot(x_values, function(x_values), label=f'Fermi-function-beta-{beta}')
+        plt.xlabel('x')
+        plt.ylabel('Fermi function(x)')
+        plt.legend()
+        plt.grid(True)
+        plt.savefig(os.path.join(self.Path_Images,'Fermi_function_for_different_beta_for.png'))
+        plt.show()

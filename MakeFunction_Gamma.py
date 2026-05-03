@@ -2,6 +2,7 @@ import numpy as np
 import scipy.integrate as integrate
 from numpy.lib.scimath import sqrt as csqrt
 from PlotingFunctions import PlottigFunctions
+from scipy.special import expit
 from scipy.interpolate import PchipInterpolator
 from Nonlinear_Equation_Gamma_Solver import Nonlinear_Equation_Solver
 class MakeFunctions_Gamma:
@@ -20,8 +21,12 @@ class MakeFunctions_Gamma:
 
     # ================= BASIC FUNCTIONS =================
     def FermiFunction(self, x):
-        return 1 / (np.exp(self.beta * x) + 1)
+        # expit(z) počítá 1 / (1 + exp(-z))
+        # Pro zisk 1 / (exp(beta*x) + 1) předáme jako argument zápornou hodnotu
 
+        result_2=expit(-self.beta * x)
+        #print((result_1, result_2))
+        return result_2
 #This function call functions from scipy.Interpolate and interpolate
     # both parts of calculated values of self-energy
     def Sigma_Interpolation(self, Sigma_values):
@@ -88,6 +93,7 @@ class MakeFunctions_Gamma:
     # current  function integral
     def D(self, Gamma):
         result = self.Integrator(Gamma,self.SumOfComplexRations)
+        #print(result)
         return result
 
     def Y(self, Gamma):

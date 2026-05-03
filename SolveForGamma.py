@@ -10,14 +10,15 @@ from PlotingFunctions import PlottigFunctions
 
 class MakeIterationProcessforGamma:
   #Here is a construction of class variables
-    def __init__(self, beta, x_values, t_value, omega_values, U,
+    def __init__(self, beta, x_values, t_value, omega_values, U, U_values ,
                  NumIterations, Tolerance, Rezolution,Gamma_0, Sigma_0):
 
         self.beta = beta           # Inverse temperature
         self.x_values = x_values    # Array of x values
         self.t_value = t_value #Hopping parameter
         self.omegavalues=omega_values #omega for Greeen function                # Hopping parameter
-        self.U = U   #Electron Iteraction
+        self.U= U #Electron interaction
+        self.U_values = U_values    #Electron Iteractions array
          # This calling of class is important for define another iterations
         self.NumIteration=NumIterations #Num Iterations
         self.Rezolution=Rezolution #Rezolution
@@ -25,12 +26,13 @@ class MakeIterationProcessforGamma:
         self.PF=PlottigFunctions() # Calling of class with plotiing methods
         self.Gamma_0=0
         self.step= 0.01
-        self.num_steps=100
+        self.num_steps=50
         self.h5py_filename= 'Data.h5'
+        self.h5py_solution_filename='Solutions.h5'
         self.Path_Files='Files'
         self.Path_Images='Images'
         self.Sigma_0=Sigma_0
-        self.Gamma_values= np.linspace(-1, -0.30, self.num_steps+1)
+        self.Gamma_values= np.linspace(-2,-0.001, self.num_steps+1)
         #self.Gamma_values_right= np.linspace(self.Gamma_0, self.Gamma_0+self.num_steps*self.step, self.num_steps+1)
         #np.unique(np.concatenate((self.Gamma_values_left,                    #                         self.Gamma_values_right)))
         self.TestingClass = TestingCalculations(self.beta, self.x_values, self.t_value, self.omegavalues, self.U,
@@ -84,7 +86,45 @@ class MakeIterationProcessforGamma:
 
 
 
+    def SpecificateInterval(self, f, x0, x1):
+        step = 100
+        max_kroku = 500  # Pojistka proti nekonečné smyčce
 
+        # 1. Rovnou máme štěstí a interval jsme trefili
+        if f(x0) * f(x1) <= 0:
+            return min(x0, x1), max(x0, x1)
+
+        pocitadlo = 0
+
+        # 2. Obě hodnoty jsou záporné
+        if f(x0) < 0 and f(x1) < 0:
+            if abs(f(x1)) > abs(f(x0)):
+                while f(x1) < 0 and pocitadlo < max_kroku:
+                    x1 += step
+                    pocitadlo += 1
+            else:
+                while f(x0) < 0 and pocitadlo < max_kroku:
+                    x0 -= step
+                    pocitadlo += 1
+
+        # 3. Obě hodnoty jsou kladné
+        else:
+            if abs(f(x1)) > abs(f(x0)):
+                while f(x0) > 0 and pocitadlo < max_kroku:
+                    x0 -= step
+                    pocitadlo += 1
+            else:
+                while f(x1) > 0 and pocitadlo < max_kroku:
+                    x1 += step
+                    pocitadlo += 1
+
+        # Kontrola, jestli jsme nevyčerpali všechny kroky naslepo
+        if pocitadlo >= max_kroku:
+            print("Varování: Interval nenalezen, narazili jsme na limit kroků.")
+            return None  # Nebo tady můžeš vyhodit výjimku (raise Exception)
+
+        # Vrátíme hezky seřazený interval (menší, větší)
+        return min(x0, x1), max(x0, x1)
 
 
 
@@ -95,6 +135,7 @@ class MakeIterationProcessforGamma:
         Ow_files= Operation_with_files(self.h5py_filename)
         cals= np.array(['Y(Γ)', 'D(Γ)', 'a(Γ)', 'a_Nonliear(Γ)'])
         res = np.empty((4, self.beta.size, self.Gamma_values.size))
+        #self.PF.Plot_Fermi_function(self.x_values, self.beta)
         for i, beta in enumerate(self.beta):
             Terms= Main_Terms_Equations(self.beta, self.x_values, self.t_value, self.omegavalues, self.U,
                                         self.NumIteration, self.Tolerance, self.Rezolution)
@@ -105,7 +146,8 @@ class MakeIterationProcessforGamma:
                 # This is for saving the calculation times I decide to calculate Y
                 # and D once I also created special functions in this class
                 res[2, i, j] = 1+self.U*res[0, i, j]#self.Gamma_function(gamma, beta, mkf)
-                res[3, i, j] = Terms.NonlinearEquationa(gamma, beta, res[2,i,j], res[1,i,j]/gamma**2)
+                res[3, i, j] = Terms.NonlinearEquationa(gamma, beta, res[0,i,j], res[1,i,j]/gamma**2)
+                #print(res[3,i,j])
         for i, nazev in enumerate(cals):
             Ow_files.Write_to_file(nazev, res[i] )
         #self.PF.Plot_Beta_Gamma_Dependence(res, self.beta, self.Gamma_values)
@@ -127,7 +169,7 @@ class MakeIterationProcessforGamma:
         Ow_files= Operation_with_files(self.h5py_filename)
         for i , name in enumerate(names):
             res[i]= Ow_files.Read_file(name)
-        self.PF.Plot_Beta_Gamma_Dependence(res, self.beta, self.Gamma_values)
+        self.PF.Plot_Beta_Gamma_Dependence(res, self.beta, self.Gamma_values, self.U)
         return res
 
 
@@ -145,7 +187,7 @@ class MakeIterationProcessforGamma:
         Key_Values_a, Key_Values_gamma= Ow_files.Read_file('a_limit_values'), Ow_files.Read_file('Gamma_limit_values')
         values_complete = np.vstack((Key_Values_a,  Key_Values_gamma, x0, x1, x1_new))
         Result_values= self.Read_Data_and_plot()
-        self.PF.Plot_Beta_Gamma_Dependence(Result_values, self.beta, self.Gamma_values, values_complete)
+        self.PF.Plot_Beta_Gamma_Dependence(Result_values, self.beta, self.Gamma_values, values_complete , self.U)
         return x0, x1, x1_new
 
     #For solving nonlinear equations using interval methods we needed to find specific interval limits
@@ -180,11 +222,9 @@ class MakeIterationProcessforGamma:
         Key_Values_a= np.empty((3, self.beta.size))
         Key_Values_gamma= np.empty((3, self.beta.size))
         for i, beta in enumerate(self.beta):
-
             mkf=MakeFunctions_Gamma(beta, self.x_values, self.t_value, self.omegavalues, self.U)
             terms = Main_Terms_Equations(self.beta, self.x_values, self.t_value, self.omegavalues, self.U,
                                         self.NumIteration, self.Tolerance, self.Rezolution)
-
             solution_1 =root_scalar(f=terms.a,args=( mkf), method='brenth',maxiter=1000, xtol=1e-4, bracket=(x0[i],x1[i]))
             x2[i]= solution_1.root
             print(solution_1.root)
@@ -201,20 +241,50 @@ class MakeIterationProcessforGamma:
 
 
     #THis method is so far unique particaly functable final nonlinear equation solver
+
+
     def SolveFinalEquation(self):
-        solutions= np.empty((self.beta.size), )
+        solutions = np.empty((self.beta.size,self.U_values.size), )
+        current_U = {}
+        Op_files = Operation_with_files(self.h5py_filename)
+        #data=Op_files.Read_file('solutions')
+        #for i,  beta  in enumerate(data):
+            #print(f'Solutions-for-beta={self.beta[i]}:', data[i])
 
+
+
+
+        tol=1e-13
+        # self.PF.Plot_Fermi_function(self.x_values, self.beta)
         for i, beta in enumerate(self.beta):
+            for  j, U in enumerate(self.U_values):
+                mkf = MakeFunctions_Gamma(beta, self.x_values, self.t_value, self.omegavalues, U)
 
-            mkf=MakeFunctions_Gamma(beta, self.x_values, self.t_value, self.omegavalues, self.U)
+                terms = Main_Terms_Equations(beta, self.x_values, self.t_value, self.omegavalues, U,
+                                             self.NumIteration, self.Tolerance, self.Rezolution)
 
-            terms = Main_Terms_Equations(self.beta, self.x_values, self.t_value, self.omegavalues, self.U,
-                                         self.NumIteration, self.Tolerance, self.Rezolution)
-            function= lambda gamma : terms.NonlinearEquationA(gamma, beta,mkf)
-            x0,x1=self.GenerateIntervalMonteCarlo(function)
-            solution_1 =root_scalar(f=terms.NonlinearEquationA,args=( beta, mkf), method='toms748',
-                                    maxiter=1000, xtol=1e-4, bracket=(x0,x1))
-            solutions[i]= solution_1.root
-            #self.PF.PlotGammaNonlinear(self.Gamma_values, self.GammaNonlinearFunction(self.Gamma_values,beta,mkf),beta)
-            print(f'Řešení',solutions[i])
-        return solutions
+                x0, x1 = -0.5,-1e-90# self.GenerateIntervalMonteCarlo(function)
+                f = lambda gamma: terms.NonlinearEquationA(gamma, beta, mkf)
+                #print((f(x0),f(x1)))
+                if f(x0)*f(x1)<0:
+                    solution_1 = root_scalar(f=terms.NonlinearEquationA, args=(beta, mkf), method='toms748',
+                                             maxiter=1000, xtol=1e-13,rtol=1e-13, bracket=(x0, x1))
+                    #print(solution_1.root)
+                    if np.abs(solution_1.root)>np.abs(tol):
+                        solutions[i][j] = solution_1.root
+                        print(f'a-solution-for-U={U}-beta={beta}', terms.a(solutions[i][j] * beta ** 2, mkf))
+                    else:
+                        solutions[i][j]=np.nan
+                else:
+                    solutions[i][j] =np.nan
+
+                current_U[f'for-U:{U}-beta-{beta}'] = solutions[i][j]
+
+
+            print(f'Solutions-for-beta={beta}:', solutions[i])
+            # self.PF.PlotGammaNonlinear(self.Gamma_values, self.GammaNonlinearFunction(self.Gamma_values,beta,mkf),beta)
+
+        # self.PF.Plot_3D_solutions(self.beta, self.U_values, solutions)
+
+
+        Op_files.Write_to_file('solutions', solutions)

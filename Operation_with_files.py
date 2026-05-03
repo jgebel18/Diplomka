@@ -26,9 +26,8 @@ class Operation_with_files:
     def Write_to_file(self, nazev, Data):
         with h5py.File(self.filename, 'a') as f:
             if nazev in f:
-                f[nazev][:] = Data  # přepis obsahu
-            else:
-                f.create_dataset(nazev, data=Data)
+                del f[nazev]
+            f.create_dataset(nazev, data=Data)
 
 
 

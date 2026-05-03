@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib
 import os
-
 from SolveNonlinearEquation import SolveNonlinearEquation
 from CreateIterationProcess import MakeIterationFuntions
 from SolveQuarticEquation import SolveQuarticEquation
@@ -9,7 +8,7 @@ from MakeFunction_Gamma import MakeFunctions_Gamma
 from SolveForGamma import MakeIterationProcessforGamma
 matplotlib.use('TkAgg')
 
-
+#Zero iteration of self-energy
 def ZerothIterationofSelfEnergy(U,t):
         Sigma= 1j *3* Gamma_0(U,t) / (2 *t)
         return Sigma
@@ -28,9 +27,10 @@ Image_dir= 'Images'
 File_dir= 'Files'
 # Simulation parameters
 t = 1.0  #Hopping parameter
-U = -7.0 #np.array([0.5, 0.75, 1.0, 1.5, 2.0,2.5,3.0,4.0,5.0,6.0,7.0,8.0,9.0]) Culoumb Interaction
+U =-2.0#np.array([0.5, 0.75, 1.0, 1.5, 2.0,2.5,3.0,4.0,5.0,6.0,7.0,8.0,9.0]) Culoumb Interaction
+U_values=np.linspace(-2.0,-0.1, 50)#np.array([0.5, 0.75, 1.0, 1.5, 2.0,2.5,3.0,4.0,5.0,6.0,7.0,8.0,9.0])
 beta_element= 1/(np.abs(ZerothIterationofSelfEnergy(U,t)))
-beta = np.array([30,100,300 ,1000, 3000, 1e4 ,1e5,1e6,1e7,1e8])*beta_element
+beta =  np.logspace( 1,6, 9 )#np.array([30,100,300 ,1000, 3000, 1e4 ,1e5,1e6,1e7,1e8])
 
 ScaleFactor=1.5
 while True:
@@ -50,9 +50,10 @@ while True:
             #IP=MakeIterationFuntions(beta,x_values, t,omega_values, U, NumIteration,
              #                         Tolerance, Rezolution,
               #                         Gamma_0(U,t),ZerothIterationofSelfEnergy(U,t))
-            IP= MakeIterationProcessforGamma(beta,x_values, t,omega_values, U, NumIteration,
+            IP= MakeIterationProcessforGamma(beta,x_values, t,omega_values,U, U_values , NumIteration,
                                       Tolerance, Rezolution,
                                       Gamma_0(U,t),ZerothIterationofSelfEnergy(U,t))
+
             IP.SolveFinalEquation()
             #IP.GiveFinalG()
             #IP.Read_Data_and_plot()
