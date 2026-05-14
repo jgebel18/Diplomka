@@ -6,7 +6,7 @@ from Main_Terms_In_Equations import Main_Terms_Equations
 from MakeFunction_Gamma import MakeFunctions_Gamma
 from Operation_with_files import Operation_with_files
 from PlotingFunctions import PlottigFunctions
-
+import os
 
 class MakeIterationProcessforGamma:
   #Here is a construction of class variables
@@ -30,6 +30,7 @@ class MakeIterationProcessforGamma:
         self.h5py_filename= 'Data.h5'
         self.h5py_solution_filename='Solutions.h5'
         self.Path_Files='Files'
+        self.Critial_Data_File_Name= 'Data_4.txt'
         self.Path_Images='Images'
         self.Sigma_0=Sigma_0
         self.Gamma_values= np.linspace(-2,-0.001, self.num_steps+1)
@@ -56,7 +57,6 @@ class MakeIterationProcessforGamma:
             SigmaIterations.append(Sigma)
             Gamma = self.Gamma(Sigma)
             NewSigma = self.GenerateSolution(Gamma)  # self.NewSigma(self.omegavalues, Sigma, i) #Calculating Sigma
-
             # Tolerance check
             if self.CheckingforContinue(SigmaValues, NewSigma) == True:
                 return NewSigma, np.array(SigmaIterations)
@@ -85,7 +85,7 @@ class MakeIterationProcessforGamma:
             return False
 
 
-
+    #This is for findin key interval for applying the nonlinear equation solver
     def SpecificateInterval(self, f, x0, x1):
         step = 100
         max_kroku = 500  # Pojistka proti nekonečné smyčce
@@ -172,7 +172,8 @@ class MakeIterationProcessforGamma:
         self.PF.Plot_Beta_Gamma_Dependence(res, self.beta, self.Gamma_values, self.U)
         return res
 
-
+    #This is for  solution analyzing and read the h5py-file and plots in
+  # graphs with limits of the intervals which are imput parameter to Nonlinear equation solver
     def AnalyzeTheSolution_read(self):
         x0, x1, x1_new= (np.full(self.beta.size,self.Gamma_values[0], dtype=float),
                          np.full((self.beta.size),self.Gamma_values[-1], dtype=float),
@@ -194,7 +195,7 @@ class MakeIterationProcessforGamma:
   # values x0,x1 to satisfy this condition
   # f(x0)f(x1)<0 and before using this interval method i decided to use correctly
   # directed Monte Carlo algorithm
-    def GenerateIntervalMonteCarlo(self, function, search_interval=(-100, 0), limit=10):
+    def GenerateIntervalMonteCarlo(self, function, search_interval=(-100, 0)):
         Num_Iteration=int(1e4)
         for _ in range(Num_Iteration):
             x0,x1=np.random.uniform(search_interval[0],
@@ -208,8 +209,6 @@ class MakeIterationProcessforGamma:
                 return x0,x1
         print('Chyba, čísla nenalezena')
         return None
-
-
 
     #I added this this method to make calculation and solving
   # final nonlinear equation
@@ -240,51 +239,104 @@ class MakeIterationProcessforGamma:
         return x0, x1, x2
 
 
-    #THis method is so far unique particaly functable final nonlinear equation solver
-
-
+    #This method is so far unique particaly functable final nonlinear equation solver
     def SolveFinalEquation(self):
-        solutions = np.empty((self.beta.size,self.U_values.size), )
+        solutions = np.empty((self.beta.size, self.U_values.size), )
         current_U = {}
         Op_files = Operation_with_files(self.h5py_filename)
-        #data=Op_files.Read_file('solutions')
-        #for i,  beta  in enumerate(data):
-            #print(f'Solutions-for-beta={self.beta[i]}:', data[i])
-
-
-
-
-        tol=1e-13
+        # data=Op_files.Read_file('solutions')
+        # for i,  beta  in enumerate(data):
+        # print(f'Solutions-for-beta={self.beta[i]}:', data[i])
+        tol = 1e-24
         # self.PF.Plot_Fermi_function(self.x_values, self.beta)
         for i, beta in enumerate(self.beta):
-            for  j, U in enumerate(self.U_values):
+            for j, U in enumerate(self.U_values):
                 mkf = MakeFunctions_Gamma(beta, self.x_values, self.t_value, self.omegavalues, U)
-
                 terms = Main_Terms_Equations(beta, self.x_values, self.t_value, self.omegavalues, U,
                                              self.NumIteration, self.Tolerance, self.Rezolution)
-
-                x0, x1 = -0.5,-1e-90# self.GenerateIntervalMonteCarlo(function)
+                x0, x1 = -10, -1e-90  # self.GenerateIntervalMonteCarlo(function)
                 f = lambda gamma: terms.NonlinearEquationA(gamma, beta, mkf)
                 #print((f(x0),f(x1)))
-                if f(x0)*f(x1)<0:
+                if f(x0) * f(x1) < 0:
                     solution_1 = root_scalar(f=terms.NonlinearEquationA, args=(beta, mkf), method='toms748',
-                                             maxiter=1000, xtol=1e-13,rtol=1e-13, bracket=(x0, x1))
-                    #print(solution_1.root)
-                    if np.abs(solution_1.root)>np.abs(tol):
+                                             maxiter=1500, xtol=tol, rtol=2.22045e-16, bracket=(x0, x1))
+                    # print(solution_1.root)
+                    if np.abs(solution_1.root) > np.abs(tol):
                         solutions[i][j] = solution_1.root
-                        print(f'a-solution-for-U={U}-beta={beta}', terms.a(solutions[i][j] * beta ** 2, mkf))
+                        print(f'a-solution-for-U={U}-beta={beta}', terms.a(solutions[i][j] , mkf)* beta ** 2)
+                        print(f'Gamma-solution-U={U}-beta={beta}', solution_1.root)
+                        print(f'U={U}-beta={beta}', solution_1.iterations)
                     else:
-                        solutions[i][j]=np.nan
+                        solutions[i][j] = np.nan
                 else:
-                    solutions[i][j] =np.nan
-
+                    solutions[i][j] = np.nan
                 current_U[f'for-U:{U}-beta-{beta}'] = solutions[i][j]
-
-
             print(f'Solutions-for-beta={beta}:', solutions[i])
             # self.PF.PlotGammaNonlinear(self.Gamma_values, self.GammaNonlinearFunction(self.Gamma_values,beta,mkf),beta)
-
         # self.PF.Plot_3D_solutions(self.beta, self.U_values, solutions)
+        Op_files.Write_to_file(f'solutions-{(self.U_values.min, self.U_values.max)}-{(self.beta.min, self.beta.max)}', solutions)
+
+    #I made this function to confim Šimon's theoretical concepts and plotting these integrals
+  # and printing the a-function and this aproximation
+    def PlotIntergrals(self, ):
+        filtered = []
+        Gamma_2 = np.linspace(-5, -0.1, 50)
+        Mkf = MakeFunctions_Gamma(10, self.x_values, self.t_value, self.omegavalues, self.U)
+        #Sigma= Mkf.Sigma(self.Gamma_0)
+        for i, gamma in enumerate(Gamma_2):
+            integral_Y= Mkf.Y(gamma)
+            integral_D= Mkf.D(gamma)
+            integral_Y_approx = Mkf.Y_Gamma_approx_integrand(gamma)
+            integral_D_approx = Mkf.D_Gamma_approx_integrand(gamma)
+            #Sigma = Mkf.Sigma(gamma)
+            print(f'Integrals Y and D for gamma {gamma}', np.array([integral_Y, integral_D]))
+            print(f'Integrals Y_aprox and D_approx for gamma {gamma}', np.array([integral_Y_approx, integral_D_approx]))
+            #Mkf.CollectDataAndPlot(gamma)
+
+    #I added this function for read gained data and get this data to plot for šimon
 
 
-        Op_files.Write_to_file('solutions', solutions)
+    def ReadFilewithData(self):
+        filtered =  []
+        a_critical_beta = np.zeros((len(self.beta), len(self.U_values)))
+        roots= np.empty(a_critical_beta.shape)#a_critical_beta.copy()
+        name = os.path.join(self.Path_Files, self.Critial_Data_File_Name)
+        with open(name, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+            for i, beta in enumerate(self.beta):
+                for j, U in enumerate(self.U_values):
+                    key = f'a-solution-for-U={U}-beta={beta}'
+                    key_gamma = f'Gamma-solution-U={U}-beta={beta}'
+                    for line in lines:
+                        if line.startswith(key):
+                            value = float(line.split()[-1])
+                            a_critical_beta[i, j] = value
+                        elif line.startswith(key_gamma):
+                            #print('Gamma_found')
+                            value=float(line.split()[-1])
+                            roots[i,j]= value
+
+            for i in range(self.beta.size):
+                constant= roots[6][-1]
+                condition=  (roots[i]!= constant)
+                filtered_row = a_critical_beta[i][condition]
+                filtered.append(filtered_row)
+
+
+        self.PF.Plot_Final_Dependence(
+            self.beta,
+            self.U_values,
+             filtered,
+        )
+
+
+
+
+
+
+
+
+
+
+
+

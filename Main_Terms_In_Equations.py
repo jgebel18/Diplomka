@@ -83,5 +83,10 @@ class Main_Terms_Equations:
         FinalEquation = -(1 / self.U) - Mkf.Y(Gamma) + DotsOfIntegrals
         return FinalEquation
 
+    def SqrtGamma_ideal(self,):
+        return -self.U*((4/(3*np.pi))+(15/(4*np.pi*self.beta**2*self.t_value**2)))
 
-
+    def a_ideal(self):
+       result=1-(1/(1+(45/(16*self.beta**2 *self.t_value**2))))
+       #print(result)
+       return  result*self.beta**2

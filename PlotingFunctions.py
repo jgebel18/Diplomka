@@ -16,7 +16,7 @@ class PlottigFunctions:
         self.Path_Images='Images'
 
     #Ploting Integrands for Values of Sigma,
-    def PlotingItegrands(self, D_array, Y_array ,x_values, ):
+    def PlottingItegrands(self, D_array, Y_array ,x_values, ):
         fig , axes = plt.subplots(2,1, figsize=(10,10))
         for i in range(D_array.shape[0]):
             axes[0].plot(x_values, D_array[i], label=f"{i}-Iteration")
@@ -153,7 +153,7 @@ class PlottigFunctions:
 # This is function for plting every root of quartic equation in the dependence of omega
 
     def PlotRootsofQuarticEquation(self, roots, omega):
-        nazev = 'Self-Energy for every root of quartic equation'
+        nazev = f'Self-Energy for every root of quartic equation'
         fig, axes = plt.subplots(2, 2, figsize=(10, 12), sharex=True)
         axes = axes.flatten()  # převede [ [a,b], [c,d] ] -> [a,b,c,d]
         for i in range(len(roots)):
@@ -166,7 +166,7 @@ class PlottigFunctions:
             axes[i].grid(True)
         fig.suptitle(nazev)
         plt.tight_layout(rect=[0, 0, 1, 0.96])  # aby nebyl překryt hlavní titulek
-        plt.savefig(nazev + '_subplots.png', dpi=300)
+        plt.savefig(os.path.join(self.Path_Files, nazev + f'_subplots.png'), dpi=300)
         plt.show()
 
 #This is modified function to plting the roots of both equation Nonlinear and Quartic
@@ -206,8 +206,8 @@ class PlottigFunctions:
         plt.show()
     #Here is method to ploting our specific root of
     # quartic equation solved by nonlinear method
-    def PlotRootOfEquation(self, root, omega):
-        nazev = 'Self-Energy for root of nonlinear equation'
+    def PlotRootOfEquation(self, root, omega, Gamma):
+        nazev = f'Self-Energy for root of nonlinear equation'
         plt.figure( figsize=(10, 10))
         plt.scatter(omega, root.real, label=f" Root (Re)")
         plt.scatter(omega, root.imag, label=f" Root (Im)")
@@ -218,7 +218,7 @@ class PlottigFunctions:
         plt.grid(True)
         plt.title(nazev)
         #plt.tight_layout(rect=[0, 0, 1, 0.96])  # aby nebyl překryt hlavní titulek
-        plt.savefig(nazev + '_subplots.png', dpi=300)
+        plt.savefig(os.path.join(self.Path_Files,nazev + f'_subplots-{Gamma}.png'), dpi=300)
         plt.show()
 
     def PlotRootOfEquationEps(self, root, omega, epsilon):
@@ -417,3 +417,21 @@ class PlottigFunctions:
         plt.grid(True)
         plt.savefig(os.path.join(self.Path_Images,'Fermi_function_for_different_beta_for.png'))
         plt.show()
+
+
+
+    def Plot_Final_Dependence(self,  beta,U_values,a_beta_crtitical):
+            Name=f'Critical_Behaviour-Attampt-2.png'
+            plt.rcParams['text.usetex'] = True
+            plt.figure(figsize=(10,10))
+            for i , beta in enumerate(beta):
+                size=U_values.size-np.array(a_beta_crtitical[i]).size
+                U_values= U_values if size==0 else U_values[:-size]
+                plt.plot(U_values,a_beta_crtitical[i]/(beta**2), label=rf'$\beta$-{beta}' )
+            plt.grid(True)
+            plt.xlabel(rf'U')
+            plt.ylabel(rf'$a(\Gamma)$')
+            plt.ylim(0, 5)
+            plt.legend()
+            plt.savefig(os.path.join(self.Path_Images, Name))
+            plt.show()

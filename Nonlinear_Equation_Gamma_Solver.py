@@ -1,7 +1,7 @@
 import numpy as np
 import os
 from scipy.optimize import root_scalar
-
+from PlotingFunctions import PlottigFunctions
 
 #Hi Sunil I decided to create this class, because i neded to get our
 # caluculations under control and for better orientation and clasification
@@ -10,6 +10,7 @@ class Nonlinear_Equation_Solver:
     def __init__(self, t, omegavalues,):
         self.t_value= t
         self.omega_values= omegavalues
+        self.PF = PlottigFunctions()
 
 
 
@@ -56,6 +57,9 @@ class Nonlinear_Equation_Solver:
             solution = root_scalar(f=self.NonlinearEquation, method='newton', args=(Gamma,eps, omega),
                                    fprime=self.NonlinearEquationDerivative, x0=omega_0, maxiter=1000)
             complete_solution[i] = solution.root
+
+        #self.PF.PlotRootOfEquation(-1j * complete_solution * 2 * self.t_value,
+            #self.omega_values,Gamma)
         return complete_solution
 
 # Tis method tested the dependence of solution on different values of epsilon
@@ -73,6 +77,6 @@ class Nonlinear_Equation_Solver:
 
 
                 complete_solution[i][j] = solution.root
-        self.PF.PlotRootOfEquationEps(-1j * complete_solution * 2 * self.t_value,
-                                      self.omegavalues, self.epsilon)
+        self.PF.PlotRootOfEquation(-1j * complete_solution * 2 * self.t_value,
+                                      self.omega_values)
         return complete_solution

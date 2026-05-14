@@ -123,7 +123,7 @@ class MakeFunctions_Gamma:
             sig = Sigma(float(x)).item()
             values[i] = (1 / np.pi) * self.FermiFunction(x) * self.SumOfComplexRations(x, sig)
 
-        self.D_Iterations.append(values)
+        self.D_Iterations.append((values))
 
     def Y_Integrand(self, Gamma):
         Sigma = self.Sigma(Gamma)
@@ -132,7 +132,7 @@ class MakeFunctions_Gamma:
             sig = Sigma((x)).item()
             values[i] = (1 / np.pi) * self.FermiFunction(x) * self.ComplexFrac_in_Y(x, sig)
 
-        self.Y_Iterations.append(values)
+        self.Y_Iterations.append((values))
 
     # ================= GREEN FUNCTION =================
 
@@ -143,9 +143,19 @@ class MakeFunctions_Gamma:
 
     # ================= PLOTTING =================
 
-    def CollectDataAndPlot(self, Sigma):
-        self.Y_Integrand(Sigma)
-        self.D_Integrand(Sigma)
+    def CollectDataAndPlot(self, Gamma):
+        self.Y_Integrand(Gamma)
+        self.D_Integrand(Gamma)
         D_array = np.vstack(self.D_Iterations)
         Y_array = np.vstack(self.Y_Iterations)
-        self.PF.PlotingItegrands(D_array, Y_array, self.x_values)
+        self.PF.PlottingItegrands(D_array, Y_array, self.x_values)
+
+    def Y_Gamma_approx_integrand(self, Gamma):
+        result= 4/(3*np.pi*np.sqrt(-Gamma))
+
+        return result
+
+    def D_Gamma_approx_integrand(self, Gamma):
+        result =- 8*self.t_value**2/(15*np.pi)*(1/(np.sqrt(-Gamma))**3)
+        return result
+
